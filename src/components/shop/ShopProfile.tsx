@@ -1,14 +1,39 @@
 
+import { useState } from "react";
 import { Store } from "lucide-react";
 import { SellerData } from "@/data/sellers";
 import ContactForm from "./ContactForm";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 interface ShopProfileProps {
   shopData: SellerData;
   isOwnShop: boolean;
+  onUpdateDescription?: (newDescription: string) => void;
 }
 
-const ShopProfile = ({ shopData, isOwnShop }: ShopProfileProps) => {
+const ShopProfile = ({ shopData, isOwnShop, onUpdateDescription }: ShopProfileProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [description, setDescription] = useState(shopData.shopDescription);
+  const { toast } = useToast();
+
+  const handleSave = () => {
+    if (onUpdateDescription) {
+      onUpdateDescription(description);
+      toast({
+        title: "Shop Updated",
+        description: "Your shop description has been updated successfully.",
+      });
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setDescription(shopData.shopDescription);
+    setIsEditing(false);
+  };
+
   return (
     <div className="flex flex-col md:flex-row gap-6">
       {/* Shop Avatar */}
@@ -31,9 +56,35 @@ const ShopProfile = ({ shopData, isOwnShop }: ShopProfileProps) => {
         </div>
         
         <h3 className="text-xl font-semibold mb-2">About the Shop</h3>
-        <p className="mb-4">
-          {shopData.shopDescription}
-        </p>
+        
+        {isEditing ? (
+          <div className="mb-4">
+            <Textarea 
+              value={description} 
+              onChange={(e) => setDescription(e.target.value)}
+              className="min-h-[120px] mb-3"
+              placeholder="Describe your shop..."
+            />
+            <div className="flex gap-2">
+              <Button onClick={handleSave} variant="default">Save</Button>
+              <Button onClick={handleCancel} variant="outline">Cancel</Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4">
+            <p>{shopData.shopDescription}</p>
+            {isOwnShop && (
+              <Button 
+                onClick={() => setIsEditing(true)} 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+              >
+                Edit Description
+              </Button>
+            )}
+          </div>
+        )}
         
         {!isOwnShop && <ContactForm seller={shopData} />}
       </div>

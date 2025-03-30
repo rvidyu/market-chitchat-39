@@ -48,6 +48,25 @@ const SellerShop = () => {
       setShopData(sellerData);
     }
   }, [sellerId, user, isOwnShop]);
+
+  // Handler to update shop description
+  const handleUpdateDescription = (newDescription: string) => {
+    if (shopData) {
+      // Create updated shop data
+      const updatedShopData = {
+        ...shopData,
+        shopDescription: newDescription
+      };
+      
+      setShopData(updatedShopData);
+      
+      // In a real app, we would also update this in the backend
+      // For now, just update the mock data if it's the user's own shop
+      if (isOwnShop && user) {
+        MOCK_SELLERS[user.id] = updatedShopData;
+      }
+    }
+  };
   
   // Only sellers should have a shop page when viewing their own shop
   if (isOwnShop && user?.role !== "seller") {
@@ -99,7 +118,11 @@ const SellerShop = () => {
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            <ShopProfile shopData={shopData} isOwnShop={isOwnShop} />
+            <ShopProfile 
+              shopData={shopData} 
+              isOwnShop={isOwnShop} 
+              onUpdateDescription={isOwnShop ? handleUpdateDescription : undefined}
+            />
           </CardContent>
           <CardFooter className="border-t pt-4">
             <ShopStats stats={shopData.stats} />
