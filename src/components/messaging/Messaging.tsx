@@ -1,8 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { conversations, Conversation, currentUser } from "@/data/messages";
 import { Input } from "@/components/ui/input";
-import { Search, Edit, ArrowLeft } from "lucide-react";
+import { Search, Edit, ArrowLeft, Plus } from "lucide-react";
 import ConversationItem from "./ConversationItem";
 import ConversationView from "./ConversationView";
 import EmptyState from "./EmptyState";
@@ -10,12 +10,33 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export default function Messaging() {
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+interface MessagingProps {
+  initialConversationId?: string | null;
+}
+
+export default function Messaging({ initialConversationId = null }: MessagingProps) {
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(initialConversationId);
   const [searchQuery, setSearchQuery] = useState("");
   const [conversationsList, setConversationsList] = useState(conversations);
   const { toast } = useToast();
   const { isMobile } = useIsMobile();
+
+  // Update active conversation when initialConversationId changes
+  useEffect(() => {
+    if (initialConversationId) {
+      setActiveConversationId(initialConversationId);
+      
+      // Find the conversation
+      const conversation = conversationsList.find(
+        (conv) => conv.id === initialConversationId
+      );
+      
+      // If found, mark messages as read
+      if (conversation) {
+        handleSelectConversation(initialConversationId);
+      }
+    }
+  }, [initialConversationId]);
 
   // Filter conversations based on search query
   const filteredConversations = conversationsList.filter((conversation) => {
@@ -95,7 +116,7 @@ export default function Messaging() {
   // Show only conversations list on mobile if no active conversation
   if (isMobile && activeConversationId) {
     return (
-      <div className="flex h-[calc(100vh-2rem)] rounded-lg overflow-hidden border shadow-lg">
+      <div className="flex h-[calc(100vh-12rem)] rounded-lg overflow-hidden border shadow-lg">
         <div className="w-full flex flex-col">
           <div className="flex items-center p-4 border-b">
             <Button 
@@ -121,12 +142,11 @@ export default function Messaging() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] rounded-lg overflow-hidden border shadow-lg">
+    <div className="flex h-[calc(100vh-12rem)] rounded-lg overflow-hidden border shadow-lg">
       {/* Conversations Sidebar */}
       <div className={`${isMobile && activeConversationId ? 'hidden' : 'w-full'} md:w-80 border-r bg-white flex flex-col`}>
         <div className="p-4 border-b">
-          <h2 className="text-xl font-semibold mb-4">Messages</h2>
-          <div className="relative">
+          <div className="relative mb-4">
             <Search className="absolute left-3 top-3 h-4 w-4 text-messaging-muted" />
             <Input
               placeholder="Search conversations"
@@ -158,7 +178,7 @@ export default function Messaging() {
         {/* New Message Button */}
         <div className="p-4 border-t">
           <Button className="w-full bg-messaging-primary hover:bg-messaging-accent">
-            <Edit className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-2" />
             New Message
           </Button>
         </div>

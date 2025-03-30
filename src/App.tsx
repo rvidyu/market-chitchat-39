@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import SellerShop from "./pages/SellerShop";
+import Chat from "./pages/Chat";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,22 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <SellerShop />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/chat" 
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/chat/:sellerId/:productId" 
+            element={
+              <ProtectedRoute>
+                <Chat />
               </ProtectedRoute>
             } 
           />

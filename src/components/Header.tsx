@@ -27,7 +27,7 @@ const Header = () => {
         <div className="flex items-center gap-4">
           {user && (
             <nav className="hidden md:flex items-center space-x-4 mr-4">
-              <Link to="/" className="text-messaging-primary hover:text-messaging-accent flex items-center">
+              <Link to="/chat" className="text-messaging-primary hover:text-messaging-accent flex items-center">
                 <MessageSquare className="mr-1 h-4 w-4" /> Messages
               </Link>
               {user.role === "seller" && (
@@ -75,7 +75,7 @@ const Header = () => {
                   <span>{user.name}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/" className="flex items-center w-full cursor-pointer">
+                  <Link to="/chat" className="flex items-center w-full cursor-pointer">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     <span>Messages</span>
                   </Link>

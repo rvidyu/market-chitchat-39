@@ -1,14 +1,19 @@
 
 import { Product } from "@/data/products";
+import { SellerData, getSellerById } from "@/data/sellers";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
+import ProductMessageStarter from "@/components/messaging/ProductMessageStarter";
 
 interface ProductCardProps {
   product: Product;
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  // Get the seller for this product
+  const seller = getSellerById(product.sellerId);
+  
   return (
     <Card className="h-full flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md">
       <div className="relative h-48 overflow-hidden bg-gray-100">
@@ -30,10 +35,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <p className="text-sm text-gray-500 mt-2 line-clamp-2">{product.description}</p>
       </CardContent>
       
-      <CardFooter className="pt-0 pb-4">
+      <CardFooter className="pt-0 pb-4 flex flex-col space-y-2">
         <Button className="w-full bg-messaging-primary hover:bg-messaging-accent">
           <ShoppingCart className="h-4 w-4 mr-2" /> Add to Cart
         </Button>
+        
+        {seller && (
+          <ProductMessageStarter 
+            product={product} 
+            seller={seller} 
+            variant="inline" 
+          />
+        )}
       </CardFooter>
     </Card>
   );
