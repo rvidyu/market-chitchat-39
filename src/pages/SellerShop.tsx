@@ -44,8 +44,14 @@ const SellerShop = () => {
     } else {
       // Viewing another seller's shop
       // Fetch the seller data based on the sellerId
-      const sellerData = MOCK_SELLERS[sellerId || ""] || MOCK_SELLERS["seller-1"];
-      setShopData(sellerData);
+      const sellerData = MOCK_SELLERS[sellerId || ""] || null;
+      if (sellerData) {
+        setShopData(sellerData);
+      } else {
+        console.error(`Seller with ID ${sellerId} not found`);
+        // Set to the default seller if not found
+        setShopData(MOCK_SELLERS["seller-1"]);
+      }
     }
   }, [sellerId, user, isOwnShop]);
 
@@ -64,6 +70,7 @@ const SellerShop = () => {
       // For now, just update the mock data if it's the user's own shop
       if (isOwnShop && user) {
         MOCK_SELLERS[user.id] = updatedShopData;
+        console.log("Updated shop description for user:", user.id, newDescription);
       }
     }
   };

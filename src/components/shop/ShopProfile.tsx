@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Store } from "lucide-react";
 import { SellerData } from "@/data/sellers";
 import ContactForm from "./ContactForm";
@@ -17,6 +17,11 @@ const ShopProfile = ({ shopData, isOwnShop, onUpdateDescription }: ShopProfilePr
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(shopData.shopDescription);
   const { toast } = useToast();
+
+  // Update local description when shopData changes
+  useEffect(() => {
+    setDescription(shopData.shopDescription);
+  }, [shopData.shopDescription]);
 
   const handleSave = () => {
     if (onUpdateDescription) {
