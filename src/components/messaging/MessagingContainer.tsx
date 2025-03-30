@@ -7,7 +7,7 @@ interface MessagingContainerProps {
 
 export default function MessagingContainer({ children }: MessagingContainerProps) {
   return (
-    <div className="flex h-[calc(100vh-12rem)] rounded-xl overflow-hidden border shadow-lg bg-white">
+    <div className="flex h-[calc(100vh-12rem)] rounded-lg overflow-hidden border shadow-lg">
       {children}
     </div>
   );
