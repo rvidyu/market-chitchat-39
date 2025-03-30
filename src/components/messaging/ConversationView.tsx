@@ -1,6 +1,6 @@
 
 import { useRef, useEffect } from "react";
-import { Conversation, Message, currentUser } from "@/data/messages";
+import { Conversation, currentUser } from "@/data/messages";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
