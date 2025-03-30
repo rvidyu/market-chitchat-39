@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import ConversationItem from "./ConversationItem";
 import { Conversation, currentUser } from "@/data/messages";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Inbox, Send, Archive, AlertCircle, Trash } from "lucide-react";
+import { Inbox, Send, Archive, AlertCircle, Trash, FileWarning } from "lucide-react";
 
 interface ConversationsListProps {
   conversations: Conversation[];
@@ -71,6 +71,24 @@ export default function ConversationsList({
     return matchesSearch && matchesFilter;
   });
 
+  // Helper to get count of conversations by filter type
+  const getCountByFilter = (filterType: FilterType): number => {
+    return conversations.filter((conversation) => {
+      switch (filterType) {
+        case "inbox":
+          return conversation.messages[conversation.messages.length - 1].senderId !== currentUser.id;
+        case "sent":
+          return conversation.messages[conversation.messages.length - 1].senderId === currentUser.id;
+        case "unread":
+          return conversation.unreadCount > 0;
+        case "all":
+          return true;
+        default:
+          return false;
+      }
+    }).length;
+  };
+
   return (
     <>
       <div className="p-4 border-b">
@@ -91,24 +109,73 @@ export default function ConversationsList({
           onValueChange={(value) => setActiveFilter(value as FilterType)}
           className="w-full"
         >
-          <TabsList className="w-full h-auto flex overflow-x-auto py-1 bg-gray-100 border rounded-md mb-2">
-            <TabsTrigger value="inbox" className="flex items-center gap-2">
-              <Inbox className="h-4 w-4" /> Inbox
+          <TabsList className="w-full h-auto flex flex-wrap gap-1 overflow-x-auto p-1 bg-messaging-background border rounded-md mb-2">
+            <TabsTrigger 
+              value="inbox" 
+              className="flex-grow md:flex-grow-0 flex items-center justify-center gap-1.5 text-xs md:text-sm data-[state=active]:bg-messaging-primary data-[state=active]:text-white"
+            >
+              <Inbox className="h-3.5 w-3.5" /> 
+              <span>Inbox</span>
+              {getCountByFilter("inbox") > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-messaging-accent text-white text-xs">
+                  {getCountByFilter("inbox")}
+                </span>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="sent" className="flex items-center gap-2">
-              <Send className="h-4 w-4" /> Sent
+            
+            <TabsTrigger 
+              value="sent" 
+              className="flex-grow md:flex-grow-0 flex items-center justify-center gap-1.5 text-xs md:text-sm data-[state=active]:bg-messaging-primary data-[state=active]:text-white"
+            >
+              <Send className="h-3.5 w-3.5" /> 
+              <span>Sent</span>
+              {getCountByFilter("sent") > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-messaging-secondary text-messaging-text text-xs">
+                  {getCountByFilter("sent")}
+                </span>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="all" className="flex items-center gap-2">
-              <Archive className="h-4 w-4" /> All
+            
+            <TabsTrigger 
+              value="all" 
+              className="flex-grow md:flex-grow-0 flex items-center justify-center gap-1.5 text-xs md:text-sm data-[state=active]:bg-messaging-primary data-[state=active]:text-white"
+            >
+              <Archive className="h-3.5 w-3.5" /> 
+              <span>All</span>
+              {getCountByFilter("all") > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-messaging-secondary text-messaging-text text-xs">
+                  {getCountByFilter("all")}
+                </span>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="unread" className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" /> Unread
+            
+            <TabsTrigger 
+              value="unread" 
+              className="flex-grow md:flex-grow-0 flex items-center justify-center gap-1.5 text-xs md:text-sm data-[state=active]:bg-messaging-primary data-[state=active]:text-white"
+            >
+              <AlertCircle className="h-3.5 w-3.5" /> 
+              <span>Unread</span>
+              {getCountByFilter("unread") > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-messaging-accent text-white text-xs">
+                  {getCountByFilter("unread")}
+                </span>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="spam" className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" /> Spam
+            
+            <TabsTrigger 
+              value="spam" 
+              className="flex-grow md:flex-grow-0 flex items-center justify-center gap-1.5 text-xs md:text-sm data-[state=active]:bg-messaging-primary data-[state=active]:text-white"
+            >
+              <FileWarning className="h-3.5 w-3.5" /> 
+              <span>Spam</span>
             </TabsTrigger>
-            <TabsTrigger value="trash" className="flex items-center gap-2">
-              <Trash className="h-4 w-4" /> Trash
+            
+            <TabsTrigger 
+              value="trash" 
+              className="flex-grow md:flex-grow-0 flex items-center justify-center gap-1.5 text-xs md:text-sm data-[state=active]:bg-messaging-primary data-[state=active]:text-white"
+            >
+              <Trash className="h-3.5 w-3.5" /> 
+              <span>Trash</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -126,10 +193,42 @@ export default function ConversationsList({
             />
           ))
         ) : (
-          <div className="p-4 text-center text-messaging-muted">
-            {activeFilter === "spam" || activeFilter === "trash" 
-              ? `No conversations in ${activeFilter}.` 
-              : "No conversations found."}
+          <div className="p-6 text-center">
+            <div className="flex flex-col items-center justify-center gap-2 text-messaging-muted">
+              {activeFilter === "spam" && (
+                <>
+                  <FileWarning className="h-10 w-10 text-messaging-muted opacity-50" />
+                  <p>No spam messages</p>
+                </>
+              )}
+              {activeFilter === "trash" && (
+                <>
+                  <Trash className="h-10 w-10 text-messaging-muted opacity-50" />
+                  <p>Trash is empty</p>
+                </>
+              )}
+              {activeFilter === "unread" && getCountByFilter("unread") === 0 && (
+                <>
+                  <AlertCircle className="h-10 w-10 text-messaging-muted opacity-50" />
+                  <p>No unread messages</p>
+                </>
+              )}
+              {(activeFilter === "inbox" || activeFilter === "sent" || activeFilter === "all") && filteredConversations.length === 0 && (
+                <>
+                  {searchQuery ? (
+                    <>
+                      <Search className="h-10 w-10 text-messaging-muted opacity-50" />
+                      <p>No conversations found matching "{searchQuery}"</p>
+                    </>
+                  ) : (
+                    <>
+                      <Inbox className="h-10 w-10 text-messaging-muted opacity-50" />
+                      <p>No conversations in {activeFilter}</p>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
