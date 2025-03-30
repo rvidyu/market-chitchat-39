@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -109,7 +108,10 @@ const Chat = () => {
         
         <Messaging initialConversationId={activeConversationId} />
 
-        <Dialog open={quickReplyManagerOpen} onOpenChange={setQuickReplyManagerOpen}>
+        <Dialog 
+          open={quickReplyManagerOpen} 
+          onOpenChange={(open) => setQuickReplyManagerOpen(open)}
+        >
           <DialogContent className="sm:max-w-[700px]">
             <QuickReplyManager />
           </DialogContent>
