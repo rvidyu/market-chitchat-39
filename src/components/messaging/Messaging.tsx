@@ -1,14 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { conversations, Conversation, currentUser } from "@/data/messages";
-import { Input } from "@/components/ui/input";
-import { Search, Edit, ArrowLeft, Plus } from "lucide-react";
-import ConversationItem from "./ConversationItem";
+import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ConversationView from "./ConversationView";
 import EmptyState from "./EmptyState";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
+import ConversationsList from "./ConversationsList";
+import MobileHeader from "./MobileHeader";
+import MessagingContainer from "./MessagingContainer";
 
 interface MessagingProps {
   initialConversationId?: string | null;
@@ -16,7 +15,6 @@ interface MessagingProps {
 
 export default function Messaging({ initialConversationId = null }: MessagingProps) {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(initialConversationId);
-  const [searchQuery, setSearchQuery] = useState("");
   const [conversationsList, setConversationsList] = useState(conversations);
   const { toast } = useToast();
   const { isMobile } = useIsMobile();
@@ -37,14 +35,6 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
       }
     }
   }, [initialConversationId]);
-
-  // Filter conversations based on search query
-  const filteredConversations = conversationsList.filter((conversation) => {
-    const otherParticipant = conversation.participants.find(
-      (participant) => participant.id !== currentUser.id
-    );
-    return otherParticipant?.name.toLowerCase().includes(searchQuery.toLowerCase());
-  });
 
   // Find the active conversation
   const activeConversation = conversationsList.find(
@@ -116,19 +106,9 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
   // Show only conversations list on mobile if no active conversation
   if (isMobile && activeConversationId) {
     return (
-      <div className="flex h-[calc(100vh-12rem)] rounded-lg overflow-hidden border shadow-lg">
+      <MessagingContainer>
         <div className="w-full flex flex-col">
-          <div className="flex items-center p-4 border-b">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleBackToList}
-              className="mr-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h2 className="text-xl font-semibold">Messages</h2>
-          </div>
+          <MobileHeader onBackClick={handleBackToList} />
           
           {activeConversation && (
             <ConversationView
@@ -137,51 +117,19 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
             />
           )}
         </div>
-      </div>
+      </MessagingContainer>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-12rem)] rounded-lg overflow-hidden border shadow-lg">
+    <MessagingContainer>
       {/* Conversations Sidebar */}
       <div className={`${isMobile && activeConversationId ? 'hidden' : 'w-full'} md:w-80 border-r bg-white flex flex-col`}>
-        <div className="p-4 border-b">
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-messaging-muted" />
-            <Input
-              placeholder="Search conversations"
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto">
-          {filteredConversations.length > 0 ? (
-            filteredConversations.map((conversation) => (
-              <ConversationItem
-                key={conversation.id}
-                conversation={conversation}
-                isActive={conversation.id === activeConversationId}
-                onClick={() => handleSelectConversation(conversation.id)}
-              />
-            ))
-          ) : (
-            <div className="p-4 text-center text-messaging-muted">
-              No conversations found.
-            </div>
-          )}
-        </div>
-
-        {/* New Message Button */}
-        <div className="p-4 border-t">
-          <Button className="w-full bg-messaging-primary hover:bg-messaging-accent">
-            <Plus className="h-4 w-4 mr-2" />
-            New Message
-          </Button>
-        </div>
+        <ConversationsList 
+          conversations={conversationsList}
+          activeConversationId={activeConversationId}
+          onSelectConversation={handleSelectConversation}
+        />
       </div>
 
       {/* Conversation View */}
@@ -195,6 +143,6 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
           <EmptyState />
         )}
       </div>
-    </div>
+    </MessagingContainer>
   );
 }
