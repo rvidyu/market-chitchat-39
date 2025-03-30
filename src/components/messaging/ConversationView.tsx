@@ -4,6 +4,8 @@ import { Conversation, currentUser } from "@/data/messages";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface ConversationViewProps {
   conversation: Conversation;
@@ -53,8 +55,14 @@ export default function ConversationView({ conversation, onSendMessage }: Conver
         <div ref={messagesEndRef} />
       </div>
       
-      {/* Message Input */}
-      <div className="p-4 border-t bg-white">
+      {/* Message Input with Safety Warning */}
+      <div className="p-4 border-t bg-white space-y-3">
+        <Alert className="bg-yellow-50 border-yellow-100 text-yellow-800 text-xs py-2">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-xs">
+            To stay protected, stay on Kifgo. Never follow links to other sites, and don't share contact, account, or financial info with anyone in Messages. Learn how to spot spam.
+          </AlertDescription>
+        </Alert>
         <MessageInput onSendMessage={onSendMessage} />
       </div>
     </div>
