@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import ConversationItem from "./ConversationItem";
 import { Conversation, currentUser } from "@/data/messages";
 import { cn } from "@/lib/utils";
-import { Inbox, Send, Archive, AlertCircle, Trash2 } from "lucide-react";
+import { Inbox, Send, Archive, AlertCircle } from "lucide-react";
 
 interface ConversationsListProps {
   conversations: Conversation[];
@@ -14,7 +14,7 @@ interface ConversationsListProps {
 }
 
 // Filter types for categorizing messages
-type FilterType = "inbox" | "sent" | "all" | "unread" | "spam" | "trash";
+type FilterType = "inbox" | "sent" | "all" | "unread" | "spam";
 
 interface FilterOption {
   value: FilterType;
@@ -47,7 +47,6 @@ export default function ConversationsList({
     { value: "all", label: "All", icon: <Archive className="h-4 w-4" /> },
     { value: "unread", label: "Unread", icon: <AlertCircle className="h-4 w-4" />, count: unreadCount },
     { value: "spam", label: "Spam", icon: <AlertCircle className="h-4 w-4" /> },
-    { value: "trash", label: "Trash", icon: <Trash2 className="h-4 w-4" /> },
   ];
 
   // Filter conversations based on search query and active filter
@@ -84,11 +83,6 @@ export default function ConversationsList({
         break;
       case "spam":
         // In a real app, this would filter spam-flagged messages
-        // For demo purposes, we'll just return no results
-        matchesFilter = false;
-        break;
-      case "trash":
-        // In a real app, this would show deleted conversations
         // For demo purposes, we'll just return no results
         matchesFilter = false;
         break;
@@ -161,7 +155,7 @@ export default function ConversationsList({
                  activeFilter === "sent" ? "Sent Messages" :
                  activeFilter === "unread" ? "Unread Messages" :
                  activeFilter === "all" ? "All Messages" :
-                 activeFilter === "spam" ? "Spam" : "Trash"}
+                 "Spam"}
               </h3>
             </div>
             {filteredConversations.map((conversation) => (
@@ -180,8 +174,7 @@ export default function ConversationsList({
                activeFilter === "sent" ? <Send className="h-5 w-5 text-gray-400" /> :
                activeFilter === "unread" ? <AlertCircle className="h-5 w-5 text-gray-400" /> :
                activeFilter === "all" ? <Archive className="h-5 w-5 text-gray-400" /> :
-               activeFilter === "spam" ? <AlertCircle className="h-5 w-5 text-gray-400" /> : 
-               <Trash2 className="h-5 w-5 text-gray-400" />}
+               <AlertCircle className="h-5 w-5 text-gray-400" />}
             </div>
             <p className="text-sm font-medium text-gray-600">No {activeFilter} messages</p>
             <p className="text-xs text-gray-500 mt-1">
@@ -189,7 +182,6 @@ export default function ConversationsList({
                activeFilter === "sent" ? "You haven't sent any messages" :
                activeFilter === "unread" ? "No unread messages" :
                activeFilter === "spam" ? "No spam detected" : 
-               activeFilter === "trash" ? "Your trash is empty" : 
                "No messages found"}
             </p>
           </div>
@@ -198,3 +190,4 @@ export default function ConversationsList({
     </>
   );
 }
+
