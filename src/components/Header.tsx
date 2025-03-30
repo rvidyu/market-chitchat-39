@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogIn, UserPlus, LogOut, User, ShoppingBag, Store } from "lucide-react";
+import { LogIn, UserPlus, LogOut, User, ShoppingBag, Store, MessageSquare } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +24,20 @@ const Header = () => {
           <h1 className="text-2xl font-bold text-messaging-primary">Handmade & Vintage Marketplace</h1>
         </Link>
         
-        <div>
+        <div className="flex items-center gap-4">
+          {user && (
+            <nav className="hidden md:flex items-center space-x-4 mr-4">
+              <Link to="/" className="text-messaging-primary hover:text-messaging-accent flex items-center">
+                <MessageSquare className="mr-1 h-4 w-4" /> Messages
+              </Link>
+              {user.role === "seller" && (
+                <Link to="/seller-shop" className="text-messaging-primary hover:text-messaging-accent flex items-center">
+                  <Store className="mr-1 h-4 w-4" /> My Shop
+                </Link>
+              )}
+            </nav>
+          )}
+          
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -51,6 +64,20 @@ const Header = () => {
                   <User className="mr-2 h-4 w-4" />
                   <span>{user.name}</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/" className="flex items-center w-full cursor-pointer">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    <span>Messages</span>
+                  </Link>
+                </DropdownMenuItem>
+                {user.role === "seller" && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/seller-shop" className="flex items-center w-full cursor-pointer">
+                      <Store className="mr-2 h-4 w-4" />
+                      <span>My Shop</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {user.role && (
                   <DropdownMenuItem className="flex items-center">
                     {user.role === "seller" ? (
