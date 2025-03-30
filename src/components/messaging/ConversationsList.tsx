@@ -1,8 +1,7 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Plus } from "lucide-react";
+import { Search } from "lucide-react";
 import ConversationItem from "./ConversationItem";
 import { Conversation, currentUser } from "@/data/messages";
 
@@ -57,14 +56,6 @@ export default function ConversationsList({
             No conversations found.
           </div>
         )}
-      </div>
-
-      {/* New Message Button */}
-      <div className="p-4 border-t">
-        <Button className="w-full bg-messaging-primary hover:bg-messaging-accent">
-          <Plus className="h-4 w-4 mr-2" />
-          New Message
-        </Button>
       </div>
     </>
   );
