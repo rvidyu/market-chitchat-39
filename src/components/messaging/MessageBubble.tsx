@@ -1,6 +1,7 @@
 
 import { Message, User, currentUser, getUserById, formatTimestamp } from "@/data/messages";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import MessageImageAttachment from "./MessageImageAttachment";
 import { cn } from "@/lib/utils";
 
 interface MessageBubbleProps {
@@ -12,6 +13,9 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   const sender = isCurrentUser ? currentUser : getUserById(message.senderId);
   
   if (!sender) return null;
+  
+  const hasContent = message.text.trim().length > 0;
+  const hasImages = message.images && message.images.length > 0;
   
   return (
     <div className={cn(
@@ -34,9 +38,17 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           "px-4 py-2 rounded-2xl",
           isCurrentUser 
             ? "bg-messaging-primary text-white rounded-tr-none" 
-            : "bg-messaging-secondary text-messaging-text rounded-tl-none"
+            : "bg-messaging-secondary text-messaging-text rounded-tl-none",
+          !hasContent && "py-1"
         )}>
-          {message.text}
+          {hasContent && message.text}
+          
+          {hasImages && (
+            <MessageImageAttachment 
+              images={message.images} 
+              className={hasContent ? "mt-2" : "m-0"}
+            />
+          )}
         </div>
         
         {message.product && (

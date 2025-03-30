@@ -20,6 +20,7 @@ export interface Message {
   timestamp: string;
   isRead: boolean;
   product?: Product;
+  images?: string[];
 }
 
 export interface Conversation {

@@ -42,8 +42,17 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
   );
 
   // Handle sending a new message
-  const handleSendMessage = (text: string) => {
+  const handleSendMessage = (text: string, images?: File[]) => {
     if (!activeConversationId) return;
+
+    // Create image URLs (in a real app, these would be uploaded to a server)
+    const imageUrls: string[] = [];
+    if (images && images.length > 0) {
+      images.forEach(image => {
+        const imageUrl = URL.createObjectURL(image);
+        imageUrls.push(imageUrl);
+      });
+    }
 
     // Create a new conversations list with the new message
     const updatedConversations = conversationsList.map((conversation) => {
@@ -55,6 +64,7 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
           text,
           timestamp: new Date().toISOString(),
           isRead: true,
+          images: imageUrls.length > 0 ? imageUrls : undefined,
         };
 
         // Return the updated conversation
@@ -73,7 +83,9 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
     // Show success toast
     toast({
       title: "Message sent",
-      description: "Your message has been sent successfully.",
+      description: images && images.length > 0 
+        ? `Your message with ${images.length} ${images.length === 1 ? 'image' : 'images'} has been sent.`
+        : "Your message has been sent successfully.",
     });
   };
 

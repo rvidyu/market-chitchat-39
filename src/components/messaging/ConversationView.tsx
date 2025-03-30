@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ConversationViewProps {
   conversation: Conversation;
-  onSendMessage: (text: string) => void;
+  onSendMessage: (text: string, images?: File[]) => void;
 }
 
 export default function ConversationView({ conversation, onSendMessage }: ConversationViewProps) {
