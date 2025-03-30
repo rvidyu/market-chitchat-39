@@ -41,7 +41,7 @@ const QuickReplySelector = ({ onSelect }: QuickReplySelectorProps) => {
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant="outline" 
+            variant="ghost" 
             size="icon"
             className="h-8 w-8 rounded-full text-messaging-primary hover:bg-messaging-primary/10 hover:text-messaging-accent"
             title="Quick Replies"
@@ -49,10 +49,10 @@ const QuickReplySelector = ({ onSelect }: QuickReplySelectorProps) => {
             <Sparkles className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0" align="end">
-          <Command>
-            <CommandInput placeholder="Search quick replies..." />
-            <CommandList>
+        <PopoverContent className="w-[300px] p-0 border-messaging-primary/20" align="end">
+          <Command className="rounded-lg">
+            <CommandInput placeholder="Search quick replies..." className="border-b" />
+            <CommandList className="max-h-[300px]">
               <CommandEmpty>No results found.</CommandEmpty>
               
               {quickReplies.length === 0 ? (
@@ -80,7 +80,7 @@ const QuickReplySelector = ({ onSelect }: QuickReplySelectorProps) => {
                             key={reply.id} 
                             value={reply.text}
                             onSelect={() => handleSelect(reply.text)}
-                            className="cursor-pointer"
+                            className="cursor-pointer hover:bg-messaging-secondary/30"
                           >
                             {reply.text.length > 50 ? `${reply.text.slice(0, 50)}...` : reply.text}
                           </CommandItem>
@@ -91,7 +91,7 @@ const QuickReplySelector = ({ onSelect }: QuickReplySelectorProps) => {
                   <div className="p-2 border-t">
                     <Button 
                       variant="outline" 
-                      className="w-full text-sm"
+                      className="w-full text-sm text-messaging-primary border-messaging-primary/20 hover:bg-messaging-secondary/30"
                       onClick={() => {
                         setOpen(false);
                         setManagerOpen(true);

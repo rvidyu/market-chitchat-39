@@ -1,16 +1,18 @@
 
-import { MessageCircle } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 
 export default function EmptyState() {
   return (
-    <div className="h-full flex flex-col items-center justify-center bg-messaging-background">
-      <div className="text-center max-w-md p-8">
-        <div className="mx-auto h-16 w-16 rounded-full bg-messaging-secondary flex items-center justify-center mb-6">
-          <MessageCircle className="h-8 w-8 text-messaging-primary" />
+    <div className="flex items-center justify-center h-full w-full bg-gradient-to-b from-gray-50 to-messaging-background">
+      <div className="text-center p-6 max-w-md">
+        <div className="flex justify-center mb-6">
+          <div className="h-16 w-16 rounded-full bg-messaging-secondary/20 flex items-center justify-center text-messaging-primary">
+            <MessageSquare className="h-8 w-8" />
+          </div>
         </div>
-        <h3 className="text-2xl font-semibold mb-3">Your Messages</h3>
-        <p className="text-messaging-muted mb-6">
-          Connect with buyers and sellers about handmade and vintage items. Select a conversation to start messaging.
+        <h2 className="text-2xl font-semibold text-gray-800 mb-2">No Conversation Selected</h2>
+        <p className="text-messaging-muted text-lg">
+          Choose a conversation from the sidebar to start chatting
         </p>
       </div>
     </div>
