@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogIn, UserPlus, LogOut, User, ShoppingBag, Store } from "lucide-react";
+import { LogIn, UserPlus, LogOut, User, ShoppingBag, Store, MessageCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +24,14 @@ const Header = () => {
           <h1 className="text-2xl font-bold text-messaging-primary">Handmade & Vintage Marketplace</h1>
         </Link>
         
-        <div>
+        <div className="flex items-center gap-4">
+          {user && (
+            <Link to="/" className="flex items-center gap-2 text-messaging-primary hover:text-messaging-accent">
+              <MessageCircle className="h-5 w-5" />
+              <span>Messages</span>
+            </Link>
+          )}
+          
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
