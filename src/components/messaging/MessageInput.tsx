@@ -32,7 +32,7 @@ export default function MessageInput({ onSendMessage, placeholder = "Type a mess
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder={placeholder}
-          className="resize-none pr-12 min-h-[60px]"
+          className="resize-none pr-12 min-h-[60px] rounded-full pl-4 focus-visible:ring-messaging-primary shadow-sm"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -43,12 +43,15 @@ export default function MessageInput({ onSendMessage, placeholder = "Type a mess
             }
           }}
         />
-        <div className="absolute bottom-2 right-2">
+        <div className="absolute bottom-3 right-3">
           <QuickReplySelector onSelect={handleQuickReplySelect} />
         </div>
       </div>
-      <Button type="submit" className="bg-messaging-primary hover:bg-messaging-accent">
-        <Send className="h-4 w-4" />
+      <Button 
+        type="submit" 
+        className="bg-messaging-primary hover:bg-messaging-accent rounded-full w-12 h-12 p-0 flex items-center justify-center shadow-md"
+      >
+        <Send className="h-5 w-5" />
       </Button>
     </form>
   );
