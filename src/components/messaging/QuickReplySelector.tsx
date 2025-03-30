@@ -16,7 +16,7 @@ import {
   CommandItem,
   CommandList 
 } from "@/components/ui/command";
-import { DialogTrigger, Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import QuickReplyManager from "./QuickReplyManager";
 
 interface QuickReplySelectorProps {
@@ -58,20 +58,16 @@ const QuickReplySelector = ({ onSelect }: QuickReplySelectorProps) => {
               {quickReplies.length === 0 ? (
                 <div className="py-6 text-center text-sm text-gray-500">
                   <p>You don't have any quick replies yet.</p>
-                  <Dialog open={managerOpen} onOpenChange={setManagerOpen}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="link" 
-                        className="text-messaging-primary mt-2"
-                        onClick={() => setOpen(false)}
-                      >
-                        Create your first quick reply
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[700px]">
-                      <QuickReplyManager onSelect={handleSelect} />
-                    </DialogContent>
-                  </Dialog>
+                  <Button 
+                    variant="link" 
+                    className="text-messaging-primary mt-2"
+                    onClick={() => {
+                      setOpen(false);
+                      setManagerOpen(true);
+                    }}
+                  >
+                    Create your first quick reply
+                  </Button>
                 </div>
               ) : (
                 <>
@@ -93,20 +89,16 @@ const QuickReplySelector = ({ onSelect }: QuickReplySelectorProps) => {
                   ))}
                   
                   <div className="p-2 border-t">
-                    <Dialog open={managerOpen} onOpenChange={setManagerOpen}>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          className="w-full text-sm"
-                          onClick={() => setOpen(false)}
-                        >
-                          Manage Quick Replies
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[700px]">
-                        <QuickReplyManager onSelect={handleSelect} />
-                      </DialogContent>
-                    </Dialog>
+                    <Button 
+                      variant="outline" 
+                      className="w-full text-sm"
+                      onClick={() => {
+                        setOpen(false);
+                        setManagerOpen(true);
+                      }}
+                    >
+                      Manage Quick Replies
+                    </Button>
                   </div>
                 </>
               )}
@@ -114,6 +106,15 @@ const QuickReplySelector = ({ onSelect }: QuickReplySelectorProps) => {
           </Command>
         </PopoverContent>
       </Popover>
+
+      <Dialog 
+        open={managerOpen} 
+        onOpenChange={(open) => setManagerOpen(open)}
+      >
+        <DialogContent className="sm:max-w-[700px]">
+          <QuickReplyManager onSelect={handleSelect} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
