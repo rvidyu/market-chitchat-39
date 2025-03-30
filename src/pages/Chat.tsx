@@ -8,6 +8,9 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Store, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { conversations } from "@/data/messages";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import QuickReplyManager from "@/components/messaging/QuickReplyManager";
+import { Button } from "@/components/ui/button";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -15,6 +18,7 @@ const Chat = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [quickReplyManagerOpen, setQuickReplyManagerOpen] = useState(false);
 
   // Extract data passed from product message starter
   useEffect(() => {
@@ -89,11 +93,27 @@ const Chat = () => {
       <Header />
       
       <main className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6 flex items-center text-messaging-primary">
-          <MessageSquare className="mr-2 h-6 w-6" /> Messages
-        </h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold flex items-center text-messaging-primary">
+            <MessageSquare className="mr-2 h-6 w-6" /> Messages
+          </h1>
+          
+          <Button
+            onClick={() => setQuickReplyManagerOpen(true)}
+            variant="outline"
+            className="border-messaging-primary text-messaging-primary hover:bg-messaging-primary/10"
+          >
+            Manage Quick Replies
+          </Button>
+        </div>
         
         <Messaging initialConversationId={activeConversationId} />
+
+        <Dialog open={quickReplyManagerOpen} onOpenChange={setQuickReplyManagerOpen}>
+          <DialogContent className="sm:max-w-[700px]">
+            <QuickReplyManager />
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

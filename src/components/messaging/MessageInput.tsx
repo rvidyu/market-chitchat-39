@@ -3,6 +3,7 @@ import { useState, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Paperclip, Image } from "lucide-react";
+import QuickReplySelector from "./QuickReplySelector";
 
 interface MessageInputProps {
   onSendMessage: (text: string) => void;
@@ -18,6 +19,10 @@ export default function MessageInput({ onSendMessage, placeholder = "Type a mess
       onSendMessage(message);
       setMessage("");
     }
+  };
+  
+  const handleQuickReplySelect = (text: string) => {
+    setMessage(text);
   };
   
   return (
@@ -39,6 +44,7 @@ export default function MessageInput({ onSendMessage, placeholder = "Type a mess
           }}
         />
         <div className="absolute bottom-2 right-2 flex gap-2">
+          <QuickReplySelector onSelect={handleQuickReplySelect} />
           <Button
             type="button"
             size="icon"
