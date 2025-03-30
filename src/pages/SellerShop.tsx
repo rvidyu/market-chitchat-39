@@ -68,6 +68,14 @@ const SellerShop = () => {
   const navigate = useNavigate();
   const { sellerId } = useParams();
   
+  // Initialize form outside of any conditional logic to prevent hook violations
+  const form = useForm<ContactFormValues>({
+    defaultValues: {
+      subject: "",
+      message: "",
+    },
+  });
+  
   // Determine if viewing own shop or another seller's shop
   const isOwnShop = !sellerId || (user?.id === sellerId);
   
@@ -136,14 +144,6 @@ const SellerShop = () => {
       </div>
     );
   }
-
-  // Contact form handling
-  const form = useForm<ContactFormValues>({
-    defaultValues: {
-      subject: "",
-      message: "",
-    },
-  });
 
   const onSubmit = (data: ContactFormValues) => {
     toast({
