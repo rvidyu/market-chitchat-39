@@ -19,19 +19,25 @@ export default function ConversationItem({ conversation, isActive, onClick }: Co
   
   // Get the last message in the conversation
   const lastMessage = conversation.messages[conversation.messages.length - 1];
+  const isLastMessageFromCurrentUser = lastMessage.senderId === currentUser.id;
   
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors rounded-md",
-        isActive && "bg-messaging-background border-l-4 border-messaging-accent"
+        "flex items-center gap-3 p-3 cursor-pointer transition-colors rounded-md mx-1 my-0.5",
+        isActive 
+          ? "bg-messaging-primary bg-opacity-10 border-l-4 border-messaging-primary" 
+          : "hover:bg-gray-50 border-l-4 border-transparent"
       )}
       onClick={onClick}
     >
       <div className="relative">
-        <Avatar className="h-12 w-12">
+        <Avatar className={cn(
+          "h-12 w-12 ring-2 ring-offset-2",
+          isActive ? "ring-messaging-primary ring-opacity-50" : "ring-transparent"
+        )}>
           <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name} />
-          <AvatarFallback>
+          <AvatarFallback className="bg-messaging-secondary text-messaging-primary font-medium">
             {otherParticipant.name.split(" ").map((n) => n[0]).join("")}
           </AvatarFallback>
         </Avatar>
@@ -42,21 +48,30 @@ export default function ConversationItem({ conversation, isActive, onClick }: Co
       
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center">
-          <h3 className="font-semibold text-messaging-text truncate">
+          <h3 className={cn(
+            "font-medium truncate",
+            isActive ? "text-messaging-primary" : "text-messaging-text"
+          )}>
             {otherParticipant.name}
           </h3>
-          <span className="text-xs text-messaging-muted">
-            {formatTimestamp(conversation.lastActivity)}
+          <span className="text-xs text-messaging-muted whitespace-nowrap ml-2">
+            {formatTimestamp(lastMessage.timestamp)}
           </span>
         </div>
         
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-messaging-muted truncate max-w-[180px]">
-            {lastMessage.senderId === currentUser.id ? "You: " : ""}{lastMessage.text}
+        <div className="flex justify-between items-center mt-1">
+          <p className={cn(
+            "text-sm truncate max-w-[180px]",
+            conversation.unreadCount > 0 && !isLastMessageFromCurrentUser ? "font-medium text-messaging-text" : "text-messaging-muted"
+          )}>
+            {isLastMessageFromCurrentUser ? (
+              <span className="text-messaging-muted">You: </span>
+            ) : null}
+            {lastMessage.text}
           </p>
           
-          {conversation.unreadCount > 0 && (
-            <Badge variant="default" className="bg-messaging-accent">
+          {conversation.unreadCount > 0 && !isLastMessageFromCurrentUser && (
+            <Badge variant="default" className="bg-messaging-primary ml-2">
               {conversation.unreadCount}
             </Badge>
           )}
