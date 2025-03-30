@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, User, UserPlus } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<"buyer" | "seller">("buyer");
   const [errors, setErrors] = useState<{ 
     name?: string; 
     email?: string; 
@@ -58,7 +60,7 @@ const Register = () => {
     
     if (validate()) {
       try {
-        await register(name, email, password);
+        await register(name, email, password, role);
       } catch (error) {
         console.error("Registration error:", error);
       }
@@ -144,6 +146,25 @@ const Register = () => {
                   />
                 </div>
                 {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Account Type</Label>
+                <RadioGroup 
+                  defaultValue="buyer" 
+                  value={role} 
+                  onValueChange={(value) => setRole(value as "buyer" | "seller")}
+                  className="flex space-x-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="buyer" id="buyer" />
+                    <Label htmlFor="buyer" className="cursor-pointer">Buyer</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="seller" id="seller" />
+                    <Label htmlFor="seller" className="cursor-pointer">Seller</Label>
+                  </div>
+                </RadioGroup>
               </div>
               
               <Button 

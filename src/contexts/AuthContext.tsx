@@ -8,6 +8,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  role?: "buyer" | "seller";
 }
 
 // Define context type
@@ -15,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role?: "buyer" | "seller") => Promise<void>;
   logout: () => void;
 }
 
@@ -35,7 +36,22 @@ const MOCK_USERS: Record<string, User & { password: string }> = {
     name: "John Doe",
     email: "john@example.com",
     password: "password123",
+    role: "buyer"
   },
+  "user-2": {
+    id: "user-2",
+    name: "Jane Smith",
+    email: "seller@example.com",
+    password: "password123",
+    role: "seller"
+  },
+  "user-3": {
+    id: "user-3",
+    name: "Bob Johnson",
+    email: "buyer@example.com",
+    password: "password123",
+    role: "buyer"
+  }
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -72,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem("user", JSON.stringify(userWithoutPassword));
       toast({
         title: "Login successful",
-        description: `Welcome back, ${foundUser.name}!`,
+        description: `Welcome back, ${foundUser.name}! (${foundUser.role})`,
       });
       navigate("/");
     } else {
@@ -87,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Register function
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, role: "buyer" | "seller" = "buyer") => {
     setLoading(true);
     
     // Simulate API call delay
@@ -112,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name,
         email,
         password,
+        role
       };
       
       // In a real app, this would be saved to a database
