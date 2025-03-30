@@ -2,13 +2,15 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
-import { Store } from "lucide-react";
+import { Store, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import ShopProfile from "@/components/shop/ShopProfile";
 import ShopStats from "@/components/shop/ShopStats";
+import ProductsGrid from "@/components/shop/ProductsGrid";
 import { SellerData, MOCK_SELLERS } from "@/data/sellers";
+import { getProductsBySellerId, Product } from "@/data/products";
 
 const SellerShop = () => {
   const { user } = useAuth();
@@ -20,11 +22,14 @@ const SellerShop = () => {
   
   // Get shop data based on context
   const [shopData, setShopData] = useState<SellerData | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (isOwnShop) {
       // If it's the user's own shop
       if (user?.role !== "seller") {
+        setIsLoading(false);
         return; // No shop data if not a seller
       }
       // Use the logged-in seller's data
@@ -41,18 +46,26 @@ const SellerShop = () => {
           reviews: 0
         }
       });
+      
+      // Get products for this seller
+      setProducts(getProductsBySellerId(user.id));
     } else {
       // Viewing another seller's shop
       // Fetch the seller data based on the sellerId
       const sellerData = MOCK_SELLERS[sellerId || ""] || null;
       if (sellerData) {
         setShopData(sellerData);
+        // Get products for this seller
+        setProducts(getProductsBySellerId(sellerData.id));
       } else {
         console.error(`Seller with ID ${sellerId} not found`);
         // Set to the default seller if not found
-        setShopData(MOCK_SELLERS["seller-1"]);
+        const defaultSeller = MOCK_SELLERS["seller-1"];
+        setShopData(defaultSeller);
+        setProducts(getProductsBySellerId(defaultSeller.id));
       }
     }
+    setIsLoading(false);
   }, [sellerId, user, isOwnShop]);
 
   // Handler to update shop description
@@ -134,6 +147,29 @@ const SellerShop = () => {
           <CardFooter className="border-t pt-4">
             <ShopStats stats={shopData.stats} />
           </CardFooter>
+        </Card>
+
+        {/* Products Section */}
+        <Card className="mb-8">
+          <CardHeader className="bg-messaging-primary text-white rounded-t-lg">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold flex items-center">
+                <Package className="mr-2 h-6 w-6" /> 
+                {isOwnShop ? "Your Products" : `${shopData.name}'s Products`}
+              </h2>
+              {isOwnShop && (
+                <Button 
+                  variant="outline" 
+                  className="bg-white text-messaging-primary hover:bg-gray-100"
+                >
+                  Add New Product
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <ProductsGrid products={products} isLoading={isLoading} />
+          </CardContent>
         </Card>
       </main>
     </div>
