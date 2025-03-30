@@ -4,23 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import ConversationItem from "./ConversationItem";
 import { Conversation, currentUser } from "@/data/messages";
-import { cn } from "@/lib/utils";
 import { Inbox, Send, Archive, AlertCircle } from "lucide-react";
+import FilterBar from "./FilterBar";
+import EmptyFilterState from "./EmptyFilterState";
+import { FilterType, FilterOption } from "./types/FilterTypes";
 
 interface ConversationsListProps {
   conversations: Conversation[];
   activeConversationId: string | null;
   onSelectConversation: (conversationId: string) => void;
-}
-
-// Filter types for categorizing messages
-type FilterType = "inbox" | "sent" | "all" | "unread" | "spam";
-
-interface FilterOption {
-  value: FilterType;
-  label: string;
-  icon: React.ReactNode;
-  count?: number;
 }
 
 export default function ConversationsList({
@@ -91,6 +83,22 @@ export default function ConversationsList({
     return matchesSearch && matchesFilter;
   });
 
+  // Get the appropriate icon for empty state display
+  const getEmptyStateIcon = () => {
+    switch (activeFilter) {
+      case "inbox": 
+        return <Inbox className="h-5 w-5 text-gray-400" />;
+      case "sent": 
+        return <Send className="h-5 w-5 text-gray-400" />;
+      case "unread": 
+        return <AlertCircle className="h-5 w-5 text-gray-400" />;
+      case "all": 
+        return <Archive className="h-5 w-5 text-gray-400" />;
+      default:
+        return <AlertCircle className="h-5 w-5 text-gray-400" />;
+    }
+  };
+
   return (
     <>
       <div className="p-4 border-b">
@@ -105,44 +113,11 @@ export default function ConversationsList({
         </div>
 
         {/* Modernized Filter Tabs */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-700">Filter Messages</h3>
-            <button 
-              className="text-xs text-messaging-primary hover:text-messaging-accent transition-colors"
-              onClick={() => setActiveFilter("inbox")}
-            >
-              Reset
-            </button>
-          </div>
-          <div className="flex overflow-x-auto space-x-2 pb-2 scrollbar-none">
-            {filterOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setActiveFilter(option.value)}
-                className={cn(
-                  "flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-full transition-all text-sm",
-                  activeFilter === option.value 
-                    ? "bg-messaging-primary text-white shadow-md" 
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                )}
-              >
-                {option.icon}
-                <span>{option.label}</span>
-                {option.count !== undefined && option.count > 0 && (
-                  <span className={cn(
-                    "inline-flex items-center justify-center rounded-full text-xs font-medium",
-                    activeFilter === option.value 
-                      ? "bg-white text-messaging-primary h-5 min-w-5 px-1" 
-                      : "bg-messaging-primary text-white h-4 min-w-4 px-1"
-                  )}>
-                    {option.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+        <FilterBar 
+          filterOptions={filterOptions}
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+        />
       </div>
 
       {/* Conversations List */}
@@ -168,26 +143,12 @@ export default function ConversationsList({
             ))}
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center h-40 text-center p-4">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-              {activeFilter === "inbox" ? <Inbox className="h-5 w-5 text-gray-400" /> : 
-               activeFilter === "sent" ? <Send className="h-5 w-5 text-gray-400" /> :
-               activeFilter === "unread" ? <AlertCircle className="h-5 w-5 text-gray-400" /> :
-               activeFilter === "all" ? <Archive className="h-5 w-5 text-gray-400" /> :
-               <AlertCircle className="h-5 w-5 text-gray-400" />}
-            </div>
-            <p className="text-sm font-medium text-gray-600">No {activeFilter} messages</p>
-            <p className="text-xs text-gray-500 mt-1">
-              {activeFilter === "inbox" ? "Your inbox is empty" : 
-               activeFilter === "sent" ? "You haven't sent any messages" :
-               activeFilter === "unread" ? "No unread messages" :
-               activeFilter === "spam" ? "No spam detected" : 
-               "No messages found"}
-            </p>
-          </div>
+          <EmptyFilterState 
+            activeFilter={activeFilter}
+            icon={getEmptyStateIcon()}
+          />
         )}
       </div>
     </>
   );
 }
-
