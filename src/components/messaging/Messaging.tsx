@@ -2,18 +2,20 @@
 import { useState } from "react";
 import { conversations, Conversation, currentUser } from "@/data/messages";
 import { Input } from "@/components/ui/input";
-import { Search, Edit } from "lucide-react";
+import { Search, Edit, ArrowLeft } from "lucide-react";
 import ConversationItem from "./ConversationItem";
 import ConversationView from "./ConversationView";
 import EmptyState from "./EmptyState";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Messaging() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [conversationsList, setConversationsList] = useState(conversations);
   const { toast } = useToast();
+  const { isMobile } = useIsMobile();
 
   // Filter conversations based on search query
   const filteredConversations = conversationsList.filter((conversation) => {
@@ -85,11 +87,43 @@ export default function Messaging() {
 
     setConversationsList(updatedConversations);
   };
+  
+  const handleBackToList = () => {
+    setActiveConversationId(null);
+  };
+
+  // Show only conversations list on mobile if no active conversation
+  if (isMobile && activeConversationId) {
+    return (
+      <div className="flex h-[calc(100vh-2rem)] rounded-lg overflow-hidden border shadow-lg">
+        <div className="w-full flex flex-col">
+          <div className="flex items-center p-4 border-b">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleBackToList}
+              className="mr-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h2 className="text-xl font-semibold">Messages</h2>
+          </div>
+          
+          {activeConversation && (
+            <ConversationView
+              conversation={activeConversation}
+              onSendMessage={handleSendMessage}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-2rem)] rounded-lg overflow-hidden border shadow-lg">
       {/* Conversations Sidebar */}
-      <div className="w-full md:w-80 border-r bg-white flex flex-col">
+      <div className={`${isMobile && activeConversationId ? 'hidden' : 'w-full'} md:w-80 border-r bg-white flex flex-col`}>
         <div className="p-4 border-b">
           <h2 className="text-xl font-semibold mb-4">Messages</h2>
           <div className="relative">
@@ -131,7 +165,7 @@ export default function Messaging() {
       </div>
 
       {/* Conversation View */}
-      <div className="hidden md:flex flex-1 flex-col">
+      <div className={`${isMobile && !activeConversationId ? 'hidden' : 'flex'} md:flex flex-1 flex-col`}>
         {activeConversation ? (
           <ConversationView
             conversation={activeConversation}
