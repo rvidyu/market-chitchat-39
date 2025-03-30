@@ -62,13 +62,14 @@ const ProductMessageStarter = ({ product, seller, variant = "button" }: MessageS
     setOpen(false);
     form.reset();
     
-    // Navigate to chat page, passing the conversation ID
-    navigate(`/chat`, { 
+    // Navigate to chat page, passing the conversation ID and product information
+    navigate(`/chat/${seller.id}/${product.id}`, { 
       state: { 
         conversationId,
         sellerId: seller.id,
         productId: product.id,
-        productName: product.name
+        productName: product.name,
+        initialMessage: data.message
       } 
     });
   };
@@ -79,15 +80,17 @@ const ProductMessageStarter = ({ product, seller, variant = "button" }: MessageS
       return;
     }
     
+    // Use the default message from the form
     onSubmit({ message: form.getValues().message });
   };
 
   if (variant === "inline") {
     return (
-      <div className="mt-4">
+      <div className="mt-2">
         <Button 
           onClick={handleQuickMessage}
-          className="w-full bg-messaging-primary hover:bg-messaging-accent"
+          variant="secondary"
+          className="w-full"
         >
           <MessageSquare className="mr-2 h-4 w-4" /> 
           Quick Message About This Item

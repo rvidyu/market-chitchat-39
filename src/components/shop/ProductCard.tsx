@@ -3,8 +3,9 @@ import { Product } from "@/data/products";
 import { SellerData, getSellerById } from "@/data/sellers";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, MessageSquare } from "lucide-react";
 import ProductMessageStarter from "@/components/messaging/ProductMessageStarter";
+import { useNavigate } from "react-router-dom";
 
 interface ProductCardProps {
   product: Product;
@@ -13,6 +14,19 @@ interface ProductCardProps {
 const ProductCard = ({ product }: ProductCardProps) => {
   // Get the seller for this product
   const seller = getSellerById(product.sellerId);
+  const navigate = useNavigate();
+  
+  const handleMessageClick = () => {
+    if (seller) {
+      navigate(`/chat/${seller.id}/${product.id}`, {
+        state: {
+          productName: product.name,
+          productPrice: product.price,
+          sellerName: seller.name
+        }
+      });
+    }
+  };
   
   return (
     <Card className="h-full flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md">
@@ -36,9 +50,21 @@ const ProductCard = ({ product }: ProductCardProps) => {
       </CardContent>
       
       <CardFooter className="pt-0 pb-4 flex flex-col space-y-2">
-        <Button className="w-full bg-messaging-primary hover:bg-messaging-accent">
-          <ShoppingCart className="h-4 w-4 mr-2" /> Add to Cart
-        </Button>
+        <div className="grid grid-cols-2 gap-2 w-full">
+          <Button className="bg-messaging-primary hover:bg-messaging-accent">
+            <ShoppingCart className="h-4 w-4 mr-2" /> Add
+          </Button>
+          
+          {seller && (
+            <Button 
+              variant="outline" 
+              className="border-messaging-primary text-messaging-primary hover:bg-messaging-primary/10"
+              onClick={handleMessageClick}
+            >
+              <MessageSquare className="h-4 w-4 mr-2" /> Message
+            </Button>
+          )}
+        </div>
         
         {seller && (
           <ProductMessageStarter 

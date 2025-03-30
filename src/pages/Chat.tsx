@@ -6,6 +6,8 @@ import Messaging from "@/components/messaging/Messaging";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Store, MessageSquare } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { conversations } from "@/data/messages";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -21,14 +23,39 @@ const Chat = () => {
       setActiveConversationId(location.state.conversationId);
     }
 
-    // If coming from a product page with product info, we could start a new conversation
-    // or find an existing one about that product
-    if (sellerId && productId) {
+    // If coming from a product page with product info and initial message, create a new conversation
+    if (sellerId && productId && location.state?.initialMessage) {
       console.log("Opening chat with seller:", sellerId, "about product:", productId);
-      // In a real app, we would look up or create a conversation here
-      // For now, we'll just log it
+      
+      // Find if there's already a conversation with this seller
+      const existingConversation = conversations.find(conv => 
+        conv.participants.some(p => p.id === sellerId)
+      );
+      
+      // Use existing conversation or generate a new ID
+      const conversationId = existingConversation ? existingConversation.id : `new-conv-${Date.now()}`;
+      setActiveConversationId(conversationId);
+      
+      // In a real app, we would create a new conversation or add a message to an existing one
+      // For now, just show a toast to simulate the message being sent
+      if (location.state?.initialMessage && !location.state.messageSent) {
+        toast({
+          title: "Message sent",
+          description: `Your message about "${location.state.productName}" has been sent to the seller.`,
+        });
+        
+        // Update location state to prevent sending the message again on refresh
+        navigate(`/chat/${sellerId}/${productId}`, {
+          state: {
+            ...location.state,
+            messageSent: true,
+            conversationId
+          },
+          replace: true
+        });
+      }
     }
-  }, [location.state, sellerId, productId]);
+  }, [location.state, sellerId, productId, navigate]);
 
   if (!user) {
     return (
