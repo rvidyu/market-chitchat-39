@@ -72,6 +72,7 @@ export const useConversationManagement = (
   // Update active conversation when initialConversationId changes
   useEffect(() => {
     if (initialConversationId) {
+      console.log("Setting initial conversation ID:", initialConversationId);
       setActiveConversationId(initialConversationId);
       
       // Mark messages as read when initial conversation is set
