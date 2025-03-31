@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Messaging from "@/components/messaging/Messaging";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Store, MessageSquare } from "lucide-react";
+import { Store, MessageSquare, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { conversations } from "@/data/messages";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -19,35 +19,27 @@ const Chat = () => {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [quickReplyManagerOpen, setQuickReplyManagerOpen] = useState(false);
 
-  // Extract data passed from product message starter
   useEffect(() => {
-    // If conversation ID is in the URL state, set it as active
     if (location.state?.conversationId) {
       setActiveConversationId(location.state.conversationId);
     }
 
-    // If coming from a product page with product info and initial message, create a new conversation
     if (sellerId && productId && location.state?.initialMessage) {
       console.log("Opening chat with seller:", sellerId, "about product:", productId);
       
-      // Find if there's already a conversation with this seller
       const existingConversation = conversations.find(conv => 
         conv.participants.some(p => p.id === sellerId)
       );
       
-      // Use existing conversation or generate a new ID
       const conversationId = existingConversation ? existingConversation.id : `new-conv-${Date.now()}`;
       setActiveConversationId(conversationId);
       
-      // In a real app, we would create a new conversation or add a message to an existing one
-      // For now, just show a toast to simulate the message being sent
       if (location.state?.initialMessage && !location.state.messageSent) {
         toast({
           title: "Message sent",
           description: `Your message about "${location.state.productName}" has been sent to the seller.`,
         });
         
-        // Update location state to prevent sending the message again on refresh
         navigate(`/chat/${sellerId}/${productId}`, {
           state: {
             ...location.state,
@@ -59,6 +51,20 @@ const Chat = () => {
       }
     }
   }, [location.state, sellerId, productId, navigate]);
+
+  const handleMarkNotSpam = () => {
+    toast({
+      title: (
+        <div className="flex items-center font-medium">
+          <Check className="h-4 w-4 mr-2 text-green-500" />
+          Marked as not spam
+        </div>
+      ),
+      description: "The conversation has been moved back to your inbox.",
+      variant: "default",
+      className: "bg-white border-green-200",
+    });
+  };
 
   if (!user) {
     return (
@@ -106,7 +112,10 @@ const Chat = () => {
           </Button>
         </div>
         
-        <Messaging initialConversationId={activeConversationId} />
+        <Messaging 
+          initialConversationId={activeConversationId} 
+          onNotSpamMarked={handleMarkNotSpam}
+        />
 
         <Dialog 
           open={quickReplyManagerOpen} 

@@ -12,9 +12,10 @@ import SpamReportNotification from "./SpamReportNotification";
 
 interface MessagingProps {
   initialConversationId?: string | null;
+  onNotSpamMarked?: () => void;
 }
 
-export default function Messaging({ initialConversationId = null }: MessagingProps) {
+export default function Messaging({ initialConversationId = null, onNotSpamMarked }: MessagingProps) {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(initialConversationId);
   const [conversationsList, setConversationsList] = useState(conversations);
   const [spamConversations, setSpamConversations] = useState<string[]>([]);
@@ -134,10 +135,10 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
     setShowSpamNotification(true);
     setLastReportedSpam(conversationId);
     
-    // Hide notification after 5 seconds
+    // Hide notification after 8 seconds
     setTimeout(() => {
       setShowSpamNotification(false);
-    }, 5000);
+    }, 8000);
   };
   
   // Handle undoing spam report
@@ -157,10 +158,10 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
   const handleMarkNotSpam = (conversationId: string) => {
     setSpamConversations(spamConversations.filter(id => id !== conversationId));
     
-    toast({
-      title: "Marked as not spam",
-      description: "The conversation has been moved back to your inbox.",
-    });
+    // Call the callback if provided
+    if (onNotSpamMarked) {
+      onNotSpamMarked();
+    }
   };
   
   const handleBackToList = () => {
