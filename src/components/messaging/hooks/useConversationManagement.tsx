@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Conversation } from "@/data/types";
 import { useToast } from "@/hooks/use-toast";
@@ -98,8 +99,9 @@ export const useConversationManagement = (
   const handleSelectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId);
     
-    // Mark messages as read
+    // Mark messages as read immediately when the conversation is selected
     if (conversationId) {
+      console.log("Marking messages as read for conversation:", conversationId);
       markAsReadMutation.mutate(conversationId);
     }
   };
@@ -109,10 +111,20 @@ export const useConversationManagement = (
     if (initialConversationId) {
       setActiveConversationId(initialConversationId);
       
-      // Mark messages as read
+      // Mark messages as read when initial conversation is set
+      console.log("Marking messages as read for initial conversation:", initialConversationId);
       markAsReadMutation.mutate(initialConversationId);
     }
   }, [initialConversationId]);
+
+  // Fix for ensuring messages are marked as read when viewing a conversation
+  useEffect(() => {
+    if (activeConversationId) {
+      // This ensures that any time we have an active conversation, we mark messages as read
+      console.log("Effect: Marking messages as read for active conversation:", activeConversationId);
+      markAsReadMutation.mutate(activeConversationId);
+    }
+  }, [activeConversationId, conversationsList]);
 
   // Set up realtime subscription for new messages
   useEffect(() => {

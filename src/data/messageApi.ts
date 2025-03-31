@@ -212,7 +212,10 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
       console.error('Error marking messages as read:', error);
       throw error;
     }
+    
+    console.log('Successfully marked messages as read for conversation:', conversationId);
   } catch (err) {
     console.error('Error marking messages as read:', err);
+    throw err;
   }
 };
