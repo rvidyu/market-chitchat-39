@@ -9,7 +9,7 @@ import ShopProfileSection from "@/components/shop/ShopProfileSection";
 import ShopProducts from "@/components/shop/ShopProducts";
 import { useShopData } from "@/hooks/useShopData";
 import { Product } from "@/data/products";
-import { useAuth } from "@/contexts/auth";
+import { useAuth } from "@/contexts/auth/useAuth"; // Updated import path
 
 const SellerShop = () => {
   const { sellerId } = useParams();

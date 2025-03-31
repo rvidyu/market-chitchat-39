@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/auth";
+import { useAuth } from "@/contexts/auth/useAuth"; // Updated import path
 import { useNavigate } from "react-router-dom";
 import { SellerData, getSellerById } from "@/data/sellers";
 import { fetchProductsBySellerId, Product } from "@/data/products";
