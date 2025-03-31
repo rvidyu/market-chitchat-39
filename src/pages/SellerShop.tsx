@@ -17,7 +17,7 @@ import AddProductForm from "@/components/shop/AddProductForm";
 import { supabase } from "@/integrations/supabase/client";
 
 const SellerShop = () => {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { sellerId } = useParams();
   
