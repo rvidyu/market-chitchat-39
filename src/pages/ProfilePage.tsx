@@ -1,12 +1,40 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import ProfileEditor from "@/components/profile/ProfileEditor";
 import { useAuth } from "@/contexts/auth";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProfilePage = () => {
   const { user, loading } = useAuth();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      // Fetch user's avatar
+      const fetchAvatar = async () => {
+        try {
+          const { data } = supabase
+            .storage
+            .from('avatars')
+            .getPublicUrl(`${user.id}/avatar`);
+          
+          if (data?.publicUrl) {
+            // Check if the file exists
+            const response = await fetch(data.publicUrl, { method: 'HEAD' });
+            if (response.ok) {
+              setAvatarUrl(data.publicUrl);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching avatar:", error);
+        }
+      };
+
+      fetchAvatar();
+    }
+  }, [user]);
 
   if (loading) {
     return (
