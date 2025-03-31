@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from "react";
 import { Conversation } from "@/data/types";
 import MessageBubble from "./MessageBubble";
@@ -25,6 +26,7 @@ export default function ConversationView({ conversation, onSendMessage, onReport
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [otherUserName, setOtherUserName] = useState<string>("User");
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
   // Get current user ID and other participant's info
   useEffect(() => {
@@ -55,6 +57,20 @@ export default function ConversationView({ conversation, onSendMessage, onReport
             } else if (profileData) {
               // Use full name from profile
               setOtherUserName(profileData.name || `User ${otherParticipantId.substring(0, 4)}`);
+            }
+            
+            // Fetch avatar
+            const { data: publicUrl } = supabase
+              .storage
+              .from('avatars')
+              .getPublicUrl(`${otherParticipantId}/avatar`);
+            
+            if (publicUrl?.publicUrl) {
+              // Check if the file exists by making a HEAD request
+              const response = await fetch(publicUrl.publicUrl, { method: 'HEAD' });
+              if (response.ok) {
+                setAvatarUrl(publicUrl.publicUrl);
+              }
             }
           }
         }
@@ -102,10 +118,13 @@ export default function ConversationView({ conversation, onSendMessage, onReport
       <div className="flex items-center justify-between p-4 border-b bg-white">
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarImage src={otherParticipant.avatar} alt={otherUserName} />
-            <AvatarFallback className="bg-purple-100 text-purple-500">
-              {getInitials(otherUserName)}
-            </AvatarFallback>
+            {avatarUrl ? (
+              <AvatarImage src={avatarUrl} alt={otherUserName} />
+            ) : (
+              <AvatarFallback className="bg-purple-100 text-purple-500">
+                {getInitials(otherUserName)}
+              </AvatarFallback>
+            )}
           </Avatar>
           <div>
             <h3 className="font-semibold">
