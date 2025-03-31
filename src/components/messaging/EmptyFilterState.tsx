@@ -10,14 +10,11 @@ interface EmptyFilterStateProps {
 export default function EmptyFilterState({ activeFilter, icon }: EmptyFilterStateProps) {
   const getMessage = (filter: FilterType) => {
     switch (filter) {
-      case "inbox":
-        return "Your inbox is empty";
-      case "sent":
-        return "You haven't sent any messages";
       case "unread":
         return "No unread messages";
       case "spam":
         return "No messages have been marked as spam";
+      case "all":
       default:
         return "No messages found";
     }
