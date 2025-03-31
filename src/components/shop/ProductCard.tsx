@@ -14,12 +14,20 @@ interface ProductCardProps {
 const ProductCard = ({ product }: ProductCardProps) => {
   // Get the seller for this product
   const [seller, setSeller] = useState<SellerData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   
   useEffect(() => {
     const loadSeller = async () => {
-      const sellerData = await getSellerById(product.sellerId);
-      setSeller(sellerData);
+      setIsLoading(true);
+      try {
+        const sellerData = await getSellerById(product.sellerId);
+        setSeller(sellerData);
+      } catch (error) {
+        console.error("Error loading seller:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     loadSeller();
@@ -64,7 +72,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <ShoppingCart className="h-4 w-4 mr-2" /> Add
           </Button>
           
-          {seller && (
+          {seller && !isLoading && (
             <Button 
               variant="outline" 
               className="border-messaging-primary text-messaging-primary hover:bg-messaging-primary/10"

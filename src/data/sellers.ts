@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SellerStats {
@@ -46,6 +47,17 @@ export const MOCK_SELLERS: Record<string, SellerData> = {
   }
 };
 
+// Define the shape of the Supabase profile data
+interface SupabaseProfile {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  created_at?: string; 
+  updated_at?: string;
+  shop_description?: string; // Added this to match what we expect from the DB
+}
+
 // Function to fetch real sellers from Supabase
 export const fetchSellers = async (): Promise<SellerData[]> => {
   try {
@@ -61,7 +73,7 @@ export const fetchSellers = async (): Promise<SellerData[]> => {
     }
     
     // Transform the data to match our SellerData interface
-    return data.map((seller: any) => ({
+    return data.map((seller: SupabaseProfile) => ({
       id: seller.id,
       name: seller.name || "Shop Owner",
       role: "seller",
@@ -101,12 +113,14 @@ export const getSellerById = async (id: string): Promise<SellerData | null> => {
       return null;
     }
     
+    const profile = data as SupabaseProfile;
+    
     return {
-      id: data.id,
-      name: data.name || "Shop Owner",
+      id: profile.id,
+      name: profile.name || "Shop Owner",
       role: "seller",
-      email: data.email || "",
-      shopDescription: data.shop_description || "Welcome to my handmade and vintage shop!",
+      email: profile.email || "",
+      shopDescription: profile.shop_description || "Welcome to my handmade and vintage shop!",
       stats: {
         itemsSold: Math.floor(Math.random() * 200),
         rating: parseFloat((4 + Math.random()).toFixed(1)),
