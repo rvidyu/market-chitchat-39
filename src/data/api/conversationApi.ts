@@ -10,11 +10,14 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
       throw new Error('User not authenticated');
     }
     
-    // Get the unique conversation partners for this user by combining
-    // both sent and received messages
-    const { data: senderRecipientPairs, error } = await supabase
+    // Use a more efficient query with JOIN operations to reduce database roundtrips
+    const { data: conversations, error } = await supabase
       .from('conversations')
-      .select('*')
+      .select(`
+        *,
+        sender:profiles!conversations_sender_id_fkey(id, name),
+        recipient:profiles!conversations_recipient_id_fkey(id, name)
+      `)
       .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
       .order('timestamp', { ascending: false });
     
@@ -26,23 +29,19 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
     // Transform the data into Conversation objects
     const conversationsMap = new Map();
     
-    for (const pair of senderRecipientPairs || []) {
+    for (const conv of conversations || []) {
       // Determine the conversation partner's ID
-      const partnerId = pair.sender_id === user.id ? pair.recipient_id : pair.sender_id;
+      const partnerId = conv.sender_id === user.id ? conv.recipient_id : conv.sender_id;
       
       // Create a unique conversation ID from the two user IDs (sorted)
       const participantIds = [user.id, partnerId].sort();
       const conversationId = participantIds.join('-');
       
       if (!conversationsMap.has(conversationId)) {
-        // Fetch the other user's profile
-        const { data: partnerProfile } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', partnerId)
-          .maybeSingle();
-          
-        // Fetch the latest messages for this conversation
+        // Get partner profile from the joined data
+        const partnerProfile = conv.sender_id === user.id ? conv.recipient : conv.sender;
+        
+        // Fetch the latest messages for this conversation in a single query
         const { data: messages } = await supabase
           .from('messages')
           .select('*')
@@ -55,36 +54,29 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
           msg => msg.sender_id === partnerId && !msg.is_read
         ).length || 0;
         
-        // Get current user's profile for the name
-        const { data: currentUserProfile } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        // Create conversation object - Making sure all properties match the type
+        // Create conversation object with all required fields
         const conversation: Conversation = {
           id: conversationId,
           participants: [
             {
               id: user.id,
-              name: currentUserProfile?.name || user.user_metadata?.name || user.email || "You",
-              avatar: "", // Adding required avatar field
+              name: user.user_metadata?.name || user.email || "You",
+              avatar: "", 
               isOnline: true,
             },
             {
               id: partnerId,
               name: partnerProfile?.name || "Unknown User",
-              avatar: "", // Adding required avatar field
+              avatar: "", 
               isOnline: false,
             }
           ],
           messages: (messages || []).map(msg => ({
             id: msg.id,
-            conversationId: conversationId, // Ensure conversationId is set and required
+            conversationId: conversationId,
             senderId: msg.sender_id,
             text: msg.text,
-            timestamp: msg.timestamp, // Keep as string to match the type
+            timestamp: msg.timestamp,
             isRead: msg.is_read,
             ...(msg.product_id && {
               product: {
@@ -97,7 +89,7 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
             ...(msg.images && { images: msg.images })
           })).reverse(),
           unreadCount,
-          lastActivity: pair.timestamp // Ensure lastActivity is set
+          lastActivity: conv.timestamp
         };
         
         conversationsMap.set(conversationId, conversation);

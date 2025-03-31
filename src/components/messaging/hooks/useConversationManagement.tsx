@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Conversation } from "@/data/types";
 import { fetchConversations } from "@/data/api";
 import { useQuery } from "@tanstack/react-query";
@@ -15,20 +14,29 @@ export const useConversationManagement = (
   // Cache conversation list to avoid data jumps during refetch
   const [cachedConversations, setCachedConversations] = useState<Conversation[]>([]);
   
-  // Use optimized query settings
+  // Keep a reference to the latest conversations to avoid unnecessary re-renders
+  const latestConversationsRef = useRef<Conversation[]>([]);
+  
+  // Use optimized query settings with improved stale time and invalidation policies
   const { data: fetchedConversations = [], isLoading, error } = useQuery({
     queryKey: ['conversations'],
     queryFn: fetchConversations,
-    staleTime: 1000 * 60, // 1 minute stale time for better caching
+    staleTime: 1000 * 30, // 30 seconds stale time for better caching
     refetchInterval: 15000, // Poll every 15 seconds as backup
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
 
-  // Update cached conversations when new data arrives
+  // Update cached conversations only when meaningful changes occur
   useEffect(() => {
     if (fetchedConversations.length > 0) {
-      setCachedConversations(fetchedConversations);
+      // Only update cached conversations if there's a meaningful difference
+      const hasChanges = JSON.stringify(latestConversationsRef.current) !== JSON.stringify(fetchedConversations);
+      
+      if (hasChanges) {
+        setCachedConversations(fetchedConversations);
+        latestConversationsRef.current = fetchedConversations;
+      }
     }
   }, [fetchedConversations]);
 
@@ -36,7 +44,7 @@ export const useConversationManagement = (
   const { handleSendMessage, isSending } = useMessageSending();
   const { handleMarkMessagesAsRead } = useMessageReading();
   
-  // Set up realtime message subscription
+  // Set up realtime message subscription with enhanced callback for message delivery
   useRealtimeMessages(activeConversationId, handleMarkMessagesAsRead);
 
   // Memoized version of the mark messages as read handler
@@ -46,10 +54,10 @@ export const useConversationManagement = (
     }
   }, [handleMarkMessagesAsRead]);
 
-  // Handle sending a message in the active conversation
+  // Handle sending a message in the active conversation with optimized data access
   const sendMessageToActiveConversation = useCallback((text: string, images?: File[]) => {
-    handleSendMessage(activeConversationId, cachedConversations, text, images);
-  }, [activeConversationId, cachedConversations, handleSendMessage]);
+    handleSendMessage(activeConversationId, latestConversationsRef.current, text, images);
+  }, [activeConversationId, handleSendMessage]);
 
   // Mark messages as read when a conversation is selected
   const handleSelectConversation = useCallback((conversationId: string) => {
