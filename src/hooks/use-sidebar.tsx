@@ -28,8 +28,8 @@ export function useSidebar() {
   return context
 }
 
-export const SIDEBAR_WIDTH = "16rem"
-export const SIDEBAR_WIDTH_MOBILE = "18rem"
+export const SIDEBAR_WIDTH = "18rem"
+export const SIDEBAR_WIDTH_MOBILE = "20rem"
 export const SIDEBAR_WIDTH_ICON = "3rem"
 
 export { SidebarContext }

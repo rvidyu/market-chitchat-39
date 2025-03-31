@@ -80,7 +80,7 @@ export default function Messaging({ initialConversationId = null, onNotSpamMarke
   return (
     <MessagingContainer>
       {/* Conversations Sidebar */}
-      <div className={`${isMobile && activeConversationId ? 'hidden' : 'w-full'} md:w-80 border-r bg-white flex flex-col`}>
+      <div className={`${isMobile && activeConversationId ? 'hidden' : 'w-full'} md:w-96 border-r bg-white flex flex-col`}>
         <ConversationsList 
           conversations={conversationsList}
           activeConversationId={activeConversationId}
