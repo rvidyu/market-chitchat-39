@@ -40,7 +40,6 @@ const ProfileEditor = () => {
   // Initialize profile data from user
   useEffect(() => {
     if (user) {
-      if (user.name) setName(user.name);
       if (user.email) setEmail(user.email);
       
       // Fetch the shop description (bio) and name if it exists
@@ -132,8 +131,10 @@ const ProfileEditor = () => {
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
+            placeholder="Enter your name"
+            required
           />
+          <p className="text-xs text-muted-foreground">This is how you'll appear to others</p>
         </div>
         
         <div className="space-y-2">

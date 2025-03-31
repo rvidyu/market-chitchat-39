@@ -76,6 +76,17 @@ const ProfileView = () => {
 
   if (!user) return null;
 
+  // Get initials for avatar fallback
+  const getInitials = () => {
+    if (profileName && profileName.trim()) {
+      return profileName.charAt(0).toUpperCase();
+    }
+    if (user.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return "?";
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -86,14 +97,16 @@ const ProfileView = () => {
         <div className="flex flex-col items-center space-y-4">
           <Avatar className="h-24 w-24">
             {avatarUrl ? (
-              <AvatarImage src={avatarUrl} alt={profileName || user.name || "Profile"} />
+              <AvatarImage src={avatarUrl} alt={profileName || "Profile"} />
             ) : (
               <AvatarFallback className="text-lg bg-gradient-to-r from-primary to-secondary text-white">
-                {profileName ? profileName.charAt(0).toUpperCase() : user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                {getInitials()}
               </AvatarFallback>
             )}
           </Avatar>
-          <h2 className="text-xl font-semibold">{loading ? "Loading..." : profileName || "No name set"}</h2>
+          <h2 className="text-xl font-semibold">
+            {loading ? "Loading..." : profileName || "Set a profile name"}
+          </h2>
         </div>
 
         <div className="space-y-4">
