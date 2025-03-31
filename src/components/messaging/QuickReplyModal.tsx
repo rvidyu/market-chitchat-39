@@ -1,6 +1,6 @@
-
 import { useState } from "react";
 import { useQuickReplies } from "@/contexts/QuickReplyContext";
+import { QuickReply } from "@/data/quickReplies";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,11 +17,7 @@ import { Label } from "@/components/ui/label";
 interface QuickReplyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  replyToEdit?: {
-    id: string;
-    text: string;
-    category?: string;
-  } | null;
+  replyToEdit?: QuickReply | null;
 }
 
 const QuickReplyModal = ({ isOpen, onClose, replyToEdit }: QuickReplyModalProps) => {

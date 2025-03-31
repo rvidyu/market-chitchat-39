@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth";
 import { useNavigate } from "react-router-dom";
@@ -83,14 +82,14 @@ export const useShopData = (sellerId?: string) => {
           const defaultSellerData: SellerData = {
             id: user.id,
             name: user.name,
-            role: "seller",
             shopDescription: "Welcome to my handmade and vintage shop! I specialize in creating unique, one-of-a-kind items made with love and care.",
             stats: {
               itemsSold: 0,
               rating: 0,
               products: 0,
               reviews: 0
-            }
+            },
+            role: "seller"
           };
           setShopData(defaultSellerData);
           setProducts([]);

@@ -1,4 +1,3 @@
-
 // Simple data store for sellers
 // In a real application, this would be fetched from a database
 
@@ -12,11 +11,12 @@ export interface SellerStats {
 export interface SellerData {
   id: string;
   name: string;
-  shopName: string;
+  shopName?: string;
   shopDescription: string;
-  location: string;
-  joinedDate: string;
+  location?: string;
+  joinedDate?: string;
   stats: SellerStats;
+  role?: string; // Adding role property to fix TypeScript error
 }
 
 const sellers: SellerData[] = [
