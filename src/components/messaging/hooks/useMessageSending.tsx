@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { sendMessage } from "@/data/api";
 import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from "uuid";
 
 export const useMessageSending = () => {
   const { toast } = useToast();
@@ -15,16 +16,57 @@ export const useMessageSending = () => {
       text: string; 
       images?: File[];
     }) => {
-      // Handle image uploads
+      // Handle image uploads to Supabase Storage
       const imageUrls: string[] = [];
       if (images && images.length > 0) {
-        // For future implementation: process images more efficiently
-        for (const image of images) {
-          const imageUrl = URL.createObjectURL(image);
-          imageUrls.push(imageUrl);
+        try {
+          // Get the current user session
+          const { data } = await supabase.auth.getSession();
+          const userId = data.session?.user.id;
+          
+          if (!userId) {
+            throw new Error("User not authenticated");
+          }
+          
+          // Process each image
+          for (const image of images) {
+            // Generate a unique ID for the image
+            const uniqueId = uuidv4();
+            const filePath = `${userId}/${uniqueId}-${image.name.replace(/\s+/g, '_')}`;
+            
+            // Upload to 'message-images' bucket
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('message-images')
+              .upload(filePath, image, {
+                cacheControl: '3600',
+                upsert: false
+              });
+              
+            if (uploadError) {
+              console.error("Error uploading image:", uploadError);
+              throw new Error(uploadError.message);
+            }
+            
+            // Get the public URL
+            const { data: publicUrlData } = supabase.storage
+              .from('message-images')
+              .getPublicUrl(filePath);
+              
+            if (publicUrlData?.publicUrl) {
+              imageUrls.push(publicUrlData.publicUrl);
+            }
+          }
+        } catch (error) {
+          console.error("Error processing images:", error);
+          toast({
+            title: "Image upload failed",
+            description: error instanceof Error ? error.message : "Failed to upload one or more images",
+            variant: "destructive",
+          });
         }
       }
 
+      // Send the message with image URLs
       return sendMessage(
         recipientId, 
         text, 
@@ -33,13 +75,13 @@ export const useMessageSending = () => {
       );
     },
     onSuccess: () => {
-      // Only invalidate conversations query to refresh data
+      // Invalidate conversations query to refresh data
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error) => {
       toast({
         title: "Error sending message",
-        description: error.message || "There was an error sending your message.",
+        description: error instanceof Error ? error.message : "There was an error sending your message.",
         variant: "destructive",
       });
     }
@@ -67,6 +109,11 @@ export const useMessageSending = () => {
       
       if (!currentUserId) {
         console.error("No current user ID found");
+        toast({
+          title: "Authentication error",
+          description: "You must be logged in to send messages",
+          variant: "destructive",
+        });
         return;
       }
       
@@ -88,6 +135,11 @@ export const useMessageSending = () => {
       });
     } catch (error) {
       console.error("Error in message sending process:", error);
+      toast({
+        title: "Error sending message",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

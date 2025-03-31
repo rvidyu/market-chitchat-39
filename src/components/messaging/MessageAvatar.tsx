@@ -1,12 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
-// Global avatar cache to reduce storage requests
+// Global avatar cache with longer expiry
 const avatarCache: Record<string, { url: string | null, timestamp: number }> = {};
-const AVATAR_CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour cache expiry
+const AVATAR_CACHE_EXPIRY = 2 * 60 * 60 * 1000; // 2 hours cache expiry
 
 interface MessageAvatarProps {
   senderId: string;
@@ -20,19 +20,20 @@ export default function MessageAvatar({
   senderName 
 }: MessageAvatarProps) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const isMounted = useRef(true);
 
-  // Optimize avatar fetching to reduce unnecessary network requests
+  // Optimize avatar fetching with better error handling and caching
   useEffect(() => {
     if (!senderId) return;
     
-    let isMounted = true;
+    isMounted.current = true;
     
     // Check if we have a cached avatar URL
     const now = Date.now();
     const cachedAvatar = avatarCache[senderId];
     
     if (cachedAvatar && (now - cachedAvatar.timestamp) < AVATAR_CACHE_EXPIRY) {
-      if (isMounted) {
+      if (isMounted.current) {
         setAvatarUrl(cachedAvatar.url);
       }
       return;
@@ -49,24 +50,36 @@ export default function MessageAvatar({
         
         if (data?.publicUrl) {
           // Check if the file exists with a HEAD request
-          const response = await fetch(data.publicUrl, { 
-            method: 'HEAD',
-            cache: 'force-cache' // Force browser caching
-          });
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
           
-          if (!isMounted) return;
-          
-          if (response.ok) {
-            setAvatarUrl(data.publicUrl);
-            // Cache the URL
-            avatarCache[senderId] = { url: data.publicUrl, timestamp: now };
-          } else {
+          try {
+            const response = await fetch(data.publicUrl, { 
+              method: 'HEAD',
+              cache: 'force-cache', // Force browser caching
+              signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!isMounted.current) return;
+            
+            if (response.ok) {
+              setAvatarUrl(data.publicUrl + `?t=${now}`); // Add cache-busting
+              // Cache the URL
+              avatarCache[senderId] = { url: data.publicUrl, timestamp: now };
+            } else {
+              avatarCache[senderId] = { url: null, timestamp: now };
+            }
+          } catch (error) {
+            // Handle timeout or network errors silently
+            if (!isMounted.current) return;
             avatarCache[senderId] = { url: null, timestamp: now };
           }
         }
       } catch (err) {
         console.error("Error fetching avatar:", err);
-        if (isMounted) {
+        if (isMounted.current) {
           avatarCache[senderId] = { url: null, timestamp: now };
         }
       }
@@ -75,7 +88,7 @@ export default function MessageAvatar({
     fetchAvatar();
     
     return () => {
-      isMounted = false;
+      isMounted.current = false;
     };
   }, [senderId]);
 
