@@ -1,201 +1,173 @@
-import { useState } from "react";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/auth";
+import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Mail, Lock, User, UserPlus } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAuth } from "@/contexts/auth";
+import Header from "@/components/Header";
+
+const formSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+  role: z.enum(["buyer", "seller"], {
+    required_error: "Please select a role",
+  }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 const Register = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<"buyer" | "seller">("buyer");
-  const [errors, setErrors] = useState<{ 
-    name?: string; 
-    email?: string; 
-    password?: string;
-    confirmPassword?: string;
-  }>({});
-  const { register, loading } = useAuth();
+  const { register: registerUser, loading } = useAuth();
 
-  const validate = () => {
-    const newErrors: { 
-      name?: string; 
-      email?: string; 
-      password?: string;
-      confirmPassword?: string;
-    } = {};
-    
-    if (!name) {
-      newErrors.name = "Name is required";
-    }
-    
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email is invalid";
-    }
-    
-    if (!password) {
-      newErrors.password = "Password is required";
-    } else if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-    
-    if (password !== confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "buyer",
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (validate()) {
-      try {
-        await register(name, email, password, role);
-      } catch (error) {
-        console.error("Registration error:", error);
-      }
-    }
+  const onSubmit = async (data: FormData) => {
+    await registerUser(data.name, data.email, data.password, data.role);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-messaging-primary">Handmade & Vintage Marketplace</h1>
-          <p className="text-messaging-muted mt-2">Create a new account</p>
-        </div>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">Register</CardTitle>
-            <CardDescription className="text-center">
-              Fill in your details to create an account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-messaging-muted" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    className={`pl-10 ${errors.name ? "border-red-500" : ""}`}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-                {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-md mx-auto bg-white rounded-lg shadow p-8">
+          <div className="flex justify-center mb-6">
+            <div className="bg-messaging-primary/10 p-3 rounded-full">
+              <UserPlus className="h-6 w-6 text-messaging-primary" />
+            </div>
+          </div>
+          
+          <h1 className="text-2xl font-bold text-center mb-6">Create your account</h1>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-messaging-muted" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    className={`pl-10 ${errors.email ? "border-red-500" : ""}`}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-              </div>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="your.email@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-messaging-muted" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className={`pl-10 ${errors.password ? "border-red-500" : ""}`}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-              </div>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-messaging-muted" />
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    className={`pl-10 ${errors.confirmPassword ? "border-red-500" : ""}`}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
-                {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
-              </div>
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label>Account Type</Label>
-                <RadioGroup 
-                  defaultValue="buyer" 
-                  value={role} 
-                  onValueChange={(value) => setRole(value as "buyer" | "seller")}
-                  className="flex space-x-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="buyer" id="buyer" />
-                    <Label htmlFor="buyer" className="cursor-pointer">Buyer</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="seller" id="seller" />
-                    <Label htmlFor="seller" className="cursor-pointer">Seller</Label>
-                  </div>
-                </RadioGroup>
-              </div>
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>I want to...</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="buyer" />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">
+                            Shop for handmade & vintage items (Buyer)
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="seller" />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">
+                            Sell my handmade or vintage items (Seller)
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <Button 
                 type="submit" 
                 className="w-full bg-messaging-primary hover:bg-messaging-accent" 
                 disabled={loading}
               >
-                {loading ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Loading...
-                  </span>
-                ) : (
-                  <span className="flex items-center">
-                    <UserPlus className="mr-2 h-4 w-4" /> Create Account
-                  </span>
-                )}
+                {loading ? 'Creating Account...' : 'Create Account'}
               </Button>
+
+              <div className="text-center text-sm text-gray-500 mt-4">
+                Already have an account?{" "}
+                <Link to="/login" className="text-messaging-primary hover:underline">
+                  Log in
+                </Link>
+              </div>
             </form>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="text-center text-sm text-messaging-muted">
-              <span>Already have an account? </span>
-              <Link to="/login" className="text-messaging-primary hover:underline">
-                Sign in
-              </Link>
-            </div>
-          </CardFooter>
-        </Card>
+          </Form>
+        </div>
       </div>
     </div>
   );

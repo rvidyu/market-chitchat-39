@@ -1,5 +1,7 @@
 
-// Mock data for seller products
+// Simple data store for products
+// In a real application, this would be fetched from a database
+
 export interface Product {
   id: string;
   sellerId: string;
@@ -12,76 +14,108 @@ export interface Product {
   createdAt: string;
 }
 
-export const MOCK_PRODUCTS: Product[] = [
+const products: Product[] = [
   {
     id: "product-1",
-    sellerId: "user-2",
-    name: "Handcrafted Ceramic Mug",
-    description: "Beautiful handmade ceramic mug, perfect for your morning coffee or tea.",
-    price: 24.99,
-    imageUrl: "https://images.unsplash.com/photo-1591224876006-5a5ee5afc270?q=80&w=400",
-    category: "Home",
-    stock: 10,
-    createdAt: "2023-01-15"
+    sellerId: "seller-1",
+    name: "Vintage Ceramic Vase",
+    description: "Handcrafted ceramic vase with a beautiful blue glaze. Perfect for displaying fresh or dried flowers.",
+    price: 45.99,
+    imageUrl: "https://images.unsplash.com/photo-1612196808214-b7e239e5d5e5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80",
+    category: "Home Decor",
+    stock: 5,
+    createdAt: "2023-04-12"
   },
   {
     id: "product-2",
-    sellerId: "user-2",
-    name: "Knitted Wool Scarf",
-    description: "Warm and cozy handknitted wool scarf in a variety of colors.",
-    price: 34.99,
-    imageUrl: "https://images.unsplash.com/photo-1601379329542-31c20891b4b8?q=80&w=400",
-    category: "Accessories",
-    stock: 5,
-    createdAt: "2023-02-10"
+    sellerId: "seller-1",
+    name: "Handmade Wooden Bowl",
+    description: "This wooden bowl is hand-carved from sustainable oak. Each piece is unique with beautiful natural grain patterns.",
+    price: 35.50,
+    imageUrl: "https://images.unsplash.com/photo-1605883705077-8d3d3cebe78c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80",
+    category: "Kitchen",
+    stock: 3,
+    createdAt: "2023-04-15"
   },
   {
     id: "product-3",
     sellerId: "seller-1",
-    name: "Beaded Necklace",
-    description: "Elegant handmade beaded necklace with natural stones and sterling silver clasp.",
-    price: 45.99,
-    imageUrl: "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?q=80&w=400",
-    category: "Jewelry",
-    stock: 8,
-    createdAt: "2023-03-05"
+    name: "Vintage Record Player",
+    description: "Fully restored 1970s record player in excellent working condition. Perfect for vinyl enthusiasts.",
+    price: 199.99,
+    imageUrl: "https://images.unsplash.com/photo-1545454675-3531b543be5d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80",
+    category: "Electronics",
+    stock: 1,
+    createdAt: "2023-03-28"
   },
   {
     id: "product-4",
-    sellerId: "seller-1",
-    name: "Wooden Earrings",
-    description: "Lightweight wooden earrings with intricate designs, perfect for everyday wear.",
-    price: 18.99,
-    imageUrl: "https://images.unsplash.com/photo-1590548784585-643d2b9f2925?q=80&w=400",
-    category: "Jewelry",
-    stock: 15,
-    createdAt: "2023-01-30"
+    sellerId: "seller-2",
+    name: "Handcrafted Ceramic Mug Set",
+    description: "Set of 4 handcrafted ceramic mugs in earthy tones. Each mug has a unique shape and texture.",
+    price: 64.99,
+    imageUrl: "https://images.unsplash.com/photo-1614702815213-f98303f37fb0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80",
+    category: "Kitchen",
+    stock: 2,
+    createdAt: "2023-05-02"
   },
   {
     id: "product-5",
     sellerId: "seller-2",
-    name: "Vintage Record Player",
-    description: "Fully restored 1970s record player in excellent working condition.",
-    price: 189.99,
-    imageUrl: "https://images.unsplash.com/photo-1461360228754-6e81c478b882?q=80&w=400",
-    category: "Electronics",
-    stock: 2,
-    createdAt: "2023-02-20"
+    name: "Pottery Planter",
+    description: "Handmade ceramic planter with drainage hole. Perfect for small to medium plants.",
+    price: 32.50,
+    imageUrl: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80",
+    category: "Garden",
+    stock: 7,
+    createdAt: "2023-04-20"
   },
   {
     id: "product-6",
-    sellerId: "seller-2",
-    name: "Retro Clock Radio",
-    description: "Vintage clock radio from the 1960s, refurbished and in working condition.",
-    price: 75.99,
-    imageUrl: "https://images.unsplash.com/photo-1495704907664-81f74a7efd7b?q=80&w=400",
-    category: "Home",
-    stock: 3,
-    createdAt: "2023-03-15"
+    sellerId: "seller-3",
+    name: "Silver Leaf Earrings",
+    description: "Handcrafted sterling silver earrings with a delicate leaf design. Lightweight and perfect for everyday wear.",
+    price: 48.00,
+    imageUrl: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80",
+    category: "Jewelry",
+    stock: 8,
+    createdAt: "2023-05-05"
   }
 ];
 
-// Helper function to get products by seller ID
-export const getProductsBySellerId = (sellerId: string): Product[] => {
-  return MOCK_PRODUCTS.filter(product => product.sellerId === sellerId);
+export const fetchProductsBySellerId = async (sellerId: string): Promise<Product[]> => {
+  // Simulate an API call with a delay
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const sellerProducts = products.filter(product => product.sellerId === sellerId);
+      resolve(sellerProducts);
+    }, 500);
+  });
+};
+
+export const getProductById = async (productId: string): Promise<Product | null> => {
+  // Simulate an API call with a delay
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const product = products.find(p => p.id === productId) || null;
+      resolve(product);
+    }, 300);
+  });
+};
+
+export const addProduct = async (product: Omit<Product, 'id' | 'createdAt'>): Promise<Product> => {
+  // Simulate an API call with a delay
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const newProduct: Product = {
+        id: `product-${Date.now()}`,
+        ...product,
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+      
+      // In a real app, we would add this to the database
+      // For this demo, we'll just return the new product
+      resolve(newProduct);
+    }, 500);
+  });
 };

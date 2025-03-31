@@ -1,7 +1,12 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { QuickReply, initialQuickReplies } from "@/data/quickReplies";
-import { useToast } from "@/hooks/use-toast";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { v4 as uuidv4 } from "uuid";
+
+export interface QuickReply {
+  id: string;
+  text: string;
+  category?: string;
+}
 
 interface QuickReplyContextType {
   quickReplies: QuickReply[];
@@ -12,89 +17,94 @@ interface QuickReplyContextType {
 
 const QuickReplyContext = createContext<QuickReplyContextType | undefined>(undefined);
 
-export const QuickReplyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
-  const { toast } = useToast();
+export const useQuickReplies = () => {
+  const context = useContext(QuickReplyContext);
+  if (!context) {
+    throw new Error("useQuickReplies must be used within a QuickReplyProvider");
+  }
+  return context;
+};
 
-  // Load quick replies from localStorage on mount
+interface QuickReplyProviderProps {
+  children: ReactNode;
+}
+
+export const QuickReplyProvider: React.FC<QuickReplyProviderProps> = ({ children }) => {
+  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
+
+  // Initialize quick replies from localStorage
   useEffect(() => {
-    const savedReplies = localStorage.getItem("quickReplies");
-    if (savedReplies) {
+    const storedReplies = localStorage.getItem("quickReplies");
+    
+    if (storedReplies) {
       try {
-        setQuickReplies(JSON.parse(savedReplies));
+        setQuickReplies(JSON.parse(storedReplies));
       } catch (error) {
-        console.error("Failed to parse saved quick replies:", error);
-        setQuickReplies(initialQuickReplies);
+        console.error("Failed to parse stored quick replies:", error);
+        localStorage.removeItem("quickReplies");
       }
     } else {
-      setQuickReplies(initialQuickReplies);
+      // Add some default quick replies if none exist
+      const defaultReplies: QuickReply[] = [
+        {
+          id: uuidv4(),
+          text: "Thank you for your interest! This item is still available.",
+          category: "General"
+        },
+        {
+          id: uuidv4(),
+          text: "I'll ship this item within 1-2 business days after payment.",
+          category: "Shipping"
+        },
+        {
+          id: uuidv4(),
+          text: "I accept returns within 30 days. Please contact me before returning an item.",
+          category: "Returns"
+        }
+      ];
+      
+      setQuickReplies(defaultReplies);
+      localStorage.setItem("quickReplies", JSON.stringify(defaultReplies));
     }
   }, []);
 
   // Save quick replies to localStorage whenever they change
   useEffect(() => {
-    if (quickReplies.length > 0) {
-      localStorage.setItem("quickReplies", JSON.stringify(quickReplies));
-    }
+    localStorage.setItem("quickReplies", JSON.stringify(quickReplies));
   }, [quickReplies]);
 
   const addQuickReply = (text: string, category: string = "General") => {
     const newReply: QuickReply = {
-      id: `reply-${Date.now()}`,
+      id: uuidv4(),
       text,
-      category,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      category
     };
     
-    setQuickReplies((prev) => [...prev, newReply]);
-    toast({
-      title: "Quick Reply Added",
-      description: "Your new quick reply has been saved.",
-    });
+    setQuickReplies([...quickReplies, newReply]);
   };
 
   const updateQuickReply = (id: string, text: string, category?: string) => {
-    setQuickReplies((prev) => 
-      prev.map((reply) => {
-        if (reply.id === id) {
-          return {
-            ...reply,
-            text,
-            category: category || reply.category,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return reply;
-      })
+    setQuickReplies(
+      quickReplies.map((reply) =>
+        reply.id === id ? { ...reply, text, category: category || reply.category } : reply
+      )
     );
-    toast({
-      title: "Quick Reply Updated",
-      description: "Your quick reply has been updated.",
-    });
   };
 
   const deleteQuickReply = (id: string) => {
-    setQuickReplies((prev) => prev.filter((reply) => reply.id !== id));
-    toast({
-      title: "Quick Reply Deleted",
-      description: "Your quick reply has been removed.",
-    });
+    setQuickReplies(quickReplies.filter((reply) => reply.id !== id));
   };
 
   return (
     <QuickReplyContext.Provider
-      value={{ quickReplies, addQuickReply, updateQuickReply, deleteQuickReply }}
+      value={{
+        quickReplies,
+        addQuickReply,
+        updateQuickReply,
+        deleteQuickReply
+      }}
     >
       {children}
     </QuickReplyContext.Provider>
   );
-};
-
-export const useQuickReplies = () => {
-  const context = useContext(QuickReplyContext);
-  if (context === undefined) {
-    throw new Error("useQuickReplies must be used within a QuickReplyProvider");
-  }
-  return context;
 };

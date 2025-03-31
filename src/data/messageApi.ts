@@ -1,183 +1,107 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import type { Message, Conversation, User, Product } from "./types";
-import { currentUser, getUserById, users } from "./users";
+import { v4 as uuidv4 } from 'uuid';
+import { Message, Conversation, Product, currentUser } from './messages';
+import { getUserById } from './messages';
 
-// Function to fetch all conversations for the current user
-export async function fetchConversations() {
-  if (!supabase.auth.getSession()) {
-    throw new Error("Not authenticated");
-  }
+// Local storage key for conversations
+const CONVERSATIONS_STORAGE_KEY = 'marketplaceConversations';
 
-  const { data: messages, error } = await supabase
-    .from("messages")
-    .select("*")
-    .order("timestamp", { ascending: false });
+// Helper function to save conversations to local storage
+const saveConversationsToStorage = (conversations: Conversation[]) => {
+  localStorage.setItem(CONVERSATIONS_STORAGE_KEY, JSON.stringify(conversations));
+};
 
-  if (error) {
-    console.error("Error fetching messages:", error);
-    throw error;
-  }
+// Helper function to load conversations from local storage
+const loadConversationsFromStorage = (): Conversation[] => {
+  const storedConversations = localStorage.getItem(CONVERSATIONS_STORAGE_KEY);
+  return storedConversations ? JSON.parse(storedConversations) : [];
+};
 
-  // Group messages by conversation
-  const conversationsMap = new Map<string, Conversation>();
+// Fetch conversations for the current user
+export const fetchConversations = async (): Promise<Conversation[]> => {
+  // Load conversations from storage
+  const conversations = loadConversationsFromStorage();
   
-  for (const message of messages) {
-    const otherUserId = message.sender_id === currentUser.id ? message.recipient_id : message.sender_id;
-    const conversationId = [currentUser.id, otherUserId].sort().join('-');
-    
-    // Get the other user's info
-    const otherUserProfile = await getUserProfile(otherUserId);
-    
-    if (!conversationsMap.has(conversationId)) {
-      // Create a new conversation entry
-      conversationsMap.set(conversationId, {
-        id: conversationId,
-        participants: [
-          currentUser,
-          {
-            id: otherUserId,
-            name: otherUserProfile?.name || "Unknown User",
-            avatar: otherUserProfile?.avatar || "https://via.placeholder.com/150",
-            isOnline: false
-          }
-        ],
-        messages: [],
-        lastActivity: message.timestamp,
-        unreadCount: 0
-      });
-    }
-    
-    const conversation = conversationsMap.get(conversationId)!;
-    
-    // Add message to conversation
-    conversation.messages.push({
-      id: message.id,
-      senderId: message.sender_id,
-      text: message.text,
-      timestamp: message.timestamp,
-      isRead: message.is_read,
-      ...(message.product_id && {
-        product: {
-          id: message.product_id,
-          name: message.product_name || "",
-          image: message.product_image || "",
-          price: message.product_price || ""
-        }
-      }),
-      ...(message.images && { images: message.images })
-    });
-    
-    // Count unread messages
-    if (!message.is_read && message.sender_id !== currentUser.id) {
-      conversation.unreadCount++;
-    }
+  // Update current user ID if needed
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (user && user.id) {
+    currentUser.id = user.id;
+    currentUser.name = user.name;
   }
   
-  // Sort messages in each conversation by timestamp
-  for (const conversation of conversationsMap.values()) {
-    conversation.messages.sort((a, b) => 
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-    
-    // Set lastActivity to the timestamp of the most recent message
-    if (conversation.messages.length > 0) {
-      conversation.lastActivity = conversation.messages[conversation.messages.length - 1].timestamp;
-    }
-  }
-  
-  return Array.from(conversationsMap.values());
-}
+  // Filter conversations that include the current user
+  return conversations.filter(conversation => 
+    conversation.participants.some(p => p.id === currentUser.id)
+  );
+};
 
-// Function to send a message
-export async function sendMessage(
-  recipientId: string,
+// Send a message to a recipient
+export const sendMessage = async (
+  recipientId: string, 
   text: string,
-  product?: Product,
+  product?: Product, 
   images?: string[]
-): Promise<Message> {
-  if (!supabase.auth.getSession()) {
-    throw new Error("Not authenticated");
-  }
-
-  const { data, error } = await supabase
-    .from("messages")
-    .insert({
-      sender_id: currentUser.id,
-      recipient_id: recipientId,
-      text,
-      ...(product && {
-        product_id: product.id,
-        product_name: product.name,
-        product_image: product.image,
-        product_price: product.price
-      }),
-      ...(images && { images })
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error sending message:", error);
-    throw error;
-  }
-
-  return {
-    id: data.id,
-    senderId: data.sender_id,
-    text: data.text,
-    timestamp: data.timestamp,
-    isRead: data.is_read,
-    ...(data.product_id && {
-      product: {
-        id: data.product_id,
-        name: data.product_name || "",
-        image: data.product_image || "",
-        price: data.product_price || ""
-      }
-    }),
-    ...(data.images && { images: data.images })
-  };
-}
-
-// Function to mark messages as read
-export async function markMessagesAsRead(conversationId: string): Promise<void> {
-  if (!supabase.auth.getSession()) {
-    throw new Error("Not authenticated");
+): Promise<Message> => {
+  // Load existing conversations
+  const conversations = loadConversationsFromStorage();
+  
+  // Find or create a conversation with this recipient
+  let conversation = conversations.find(conv => 
+    conv.participants.some(p => p.id === currentUser.id) && 
+    conv.participants.some(p => p.id === recipientId)
+  );
+  
+  // If conversation doesn't exist, create one
+  if (!conversation) {
+    const recipient = getUserById(recipientId);
+    if (!recipient) {
+      throw new Error(`Recipient with ID ${recipientId} not found`);
+    }
+    
+    // Create a new conversation
+    conversation = {
+      id: uuidv4(),
+      participants: [currentUser, recipient],
+      messages: [],
+      unreadCount: 0
+    };
+    
+    conversations.push(conversation);
   }
   
-  // Extract the other user's ID from the conversation ID
-  const userIds = conversationId.split('-');
-  const otherUserId = userIds[0] === currentUser.id ? userIds[1] : userIds[0];
-  
-  const { error } = await supabase
-    .from("messages")
-    .update({ is_read: true })
-    .eq("sender_id", otherUserId)
-    .eq("recipient_id", currentUser.id)
-    .eq("is_read", false);
-
-  if (error) {
-    console.error("Error marking messages as read:", error);
-    throw error;
-  }
-}
-
-// Function to get user profile from Supabase
-async function getUserProfile(userId: string): Promise<{ name: string; avatar: string } | null> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("name, email")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (error || !data) {
-    console.error("Error fetching user profile:", error);
-    return null;
-  }
-
-  return {
-    name: data.name || data.email || "Unknown User",
-    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`
+  // Create a new message
+  const newMessage: Message = {
+    id: uuidv4(),
+    conversationId: conversation.id,
+    senderId: currentUser.id,
+    text,
+    timestamp: Date.now(),
+    images,
+    product
   };
-}
+  
+  // Add the message to the conversation
+  conversation.messages.push(newMessage);
+  
+  // If the message is from current user, incremate unread count for recipient
+  // In a real app, this would be handled differently
+  if (currentUser.id !== recipientId) {
+    conversation.unreadCount += 1;
+  }
+  
+  // Save updated conversations
+  saveConversationsToStorage(conversations);
+  
+  return newMessage;
+};
+
+// Mark messages in a conversation as read
+export const markMessagesAsRead = async (conversationId: string): Promise<void> => {
+  const conversations = loadConversationsFromStorage();
+  
+  const conversation = conversations.find(c => c.id === conversationId);
+  if (conversation) {
+    conversation.unreadCount = 0;
+    saveConversationsToStorage(conversations);
+  }
+};
