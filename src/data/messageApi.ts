@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Message, Conversation, Product, User } from './types';
 
@@ -189,10 +190,15 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
     }
     
     // Parse the conversation ID to get the participants
-    const [user1Id, user2Id] = conversationId.split('-');
+    // Conversation IDs are in the format "user1Id-user2Id" (sorted)
+    const participantIds = conversationId.split('-');
+    if (participantIds.length !== 2) {
+      console.error('Invalid conversation ID format:', conversationId);
+      return;
+    }
     
     // Determine the other participant's ID
-    const otherUserId = user1Id === user.id ? user2Id : user1Id;
+    const otherUserId = participantIds[0] === user.id ? participantIds[1] : participantIds[0];
     
     // Update all unread messages from the other user to this user
     const { error } = await supabase
@@ -203,6 +209,7 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
       .eq('is_read', false);
       
     if (error) {
+      console.error('Error marking messages as read:', error);
       throw error;
     }
   } catch (err) {

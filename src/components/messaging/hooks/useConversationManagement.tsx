@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Conversation } from "@/data/types";
 import { useToast } from "@/hooks/use-toast";
@@ -39,8 +38,6 @@ export const useConversationManagement = (
     onSuccess: () => {
       // Invalidate conversations query to refresh data
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      
-      // Removed the success toast notification
     },
     onError: (error) => {
       toast({
@@ -57,6 +54,9 @@ export const useConversationManagement = (
     onSuccess: () => {
       // Invalidate conversations query to refresh data
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+    onError: (error) => {
+      console.error("Error marking messages as read:", error);
     }
   });
 
@@ -99,13 +99,17 @@ export const useConversationManagement = (
     setActiveConversationId(conversationId);
     
     // Mark messages as read
-    markAsReadMutation.mutate(conversationId);
+    if (conversationId) {
+      markAsReadMutation.mutate(conversationId);
+    }
   };
 
   // Update active conversation when initialConversationId changes
   useEffect(() => {
     if (initialConversationId) {
       setActiveConversationId(initialConversationId);
+      
+      // Mark messages as read
       markAsReadMutation.mutate(initialConversationId);
     }
   }, [initialConversationId]);
