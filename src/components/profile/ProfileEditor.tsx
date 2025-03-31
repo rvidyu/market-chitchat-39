@@ -116,7 +116,7 @@ const ProfileEditor = () => {
           console.error("Error uploading avatar:", uploadError);
           // Continue execution even if avatar upload fails
           toast({
-            variant: "warning",
+            variant: "default",  // Changed from "warning" to "default"
             title: "Profile partially updated",
             description: "Your profile was updated, but there was an issue uploading your avatar image."
           });
