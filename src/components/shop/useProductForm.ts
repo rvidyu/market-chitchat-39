@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/data/products";
 import { productSchema, ProductFormValues } from "@/schemas/productSchema";
+import { toast } from "@/hooks/use-toast";
 
 interface UseProductFormProps {
   sellerId: string;
@@ -32,10 +33,12 @@ export const useProductForm = ({ sellerId, onSuccess, onError }: UseProductFormP
       const errorMessage = "Seller ID is missing";
       console.error(errorMessage);
       form.setError("root", { message: errorMessage });
+      if (onError) onError(errorMessage);
       return;
     }
 
     setIsSubmitting(true);
+    console.log("Submitting product with values:", values);
 
     try {
       // Insert product into Supabase
@@ -59,8 +62,15 @@ export const useProductForm = ({ sellerId, onSuccess, onError }: UseProductFormP
           message: `Failed to create product: ${error.message}` 
         });
         if (onError) onError(error.message);
+        toast({
+          title: "Product Creation Failed",
+          description: error.message,
+          variant: "destructive",
+        });
         return;
       }
+
+      console.log("Product created successfully:", data);
 
       // Map the Supabase product to our Product interface
       const newProduct: Product = {
@@ -75,6 +85,11 @@ export const useProductForm = ({ sellerId, onSuccess, onError }: UseProductFormP
         createdAt: data.created_at
       };
 
+      toast({
+        title: "Product Created",
+        description: `${values.name} has been added to your shop.`,
+      });
+
       onSuccess(newProduct);
       form.reset();
     } catch (error: any) {
@@ -83,6 +98,11 @@ export const useProductForm = ({ sellerId, onSuccess, onError }: UseProductFormP
         message: "An unexpected error occurred. Please try again." 
       });
       if (onError) onError(error.message || "Unknown error");
+      toast({
+        title: "Error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
