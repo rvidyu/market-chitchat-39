@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/auth";
+import { useAuth } from "@/contexts/auth/useAuth";
 import { LogIn, UserPlus, LogOut, User, ShoppingBag, Store, MessageSquare } from "lucide-react";
 import {
   DropdownMenu,
@@ -105,7 +105,7 @@ const Header = () => {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-center cursor-pointer" onClick={logout}>
+                <DropdownMenuItem className="flex items-center cursor-pointer" onClick={() => logout()}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>

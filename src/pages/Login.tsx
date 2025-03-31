@@ -8,8 +8,10 @@ import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/auth";
+import { useAuth } from "@/contexts/auth/useAuth";
 import Header from "@/components/Header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -19,7 +21,8 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const Login = () => {
-  const { login, loading } = useAuth();
+  const { login, loading, error } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -30,7 +33,13 @@ const Login = () => {
   });
 
   const onSubmit = async (data: FormData) => {
-    await login(data.email, data.password);
+    setAuthError(null);
+    try {
+      await login(data.email, data.password);
+    } catch (error) {
+      console.error("Login error:", error);
+      setAuthError((error as Error).message || "Failed to login. Please check your credentials.");
+    }
   };
 
   return (
@@ -46,6 +55,14 @@ const Login = () => {
           </div>
           
           <h1 className="text-2xl font-bold text-center mb-6">Log in to your account</h1>
+          
+          {(error || authError) && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                {error || authError}
+              </AlertDescription>
+            </Alert>
+          )}
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -82,7 +99,12 @@ const Login = () => {
                 className="w-full bg-messaging-primary hover:bg-messaging-accent" 
                 disabled={loading}
               >
-                {loading ? 'Logging in...' : 'Log in'}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : 'Log in'}
               </Button>
 
               <div className="text-center text-sm text-gray-500 mt-4">
