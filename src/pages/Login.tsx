@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -12,10 +12,11 @@ import { useAuth } from "@/contexts/auth/useAuth";
 import Header from "@/components/Header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -23,6 +24,7 @@ type FormData = z.infer<typeof formSchema>;
 const Login = () => {
   const { login, loading, error } = useAuth();
   const [authError, setAuthError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -36,9 +38,15 @@ const Login = () => {
     setAuthError(null);
     try {
       await login(data.email, data.password);
+      // Success toast is handled in the login function
     } catch (error) {
       console.error("Login error:", error);
       setAuthError((error as Error).message || "Failed to login. Please check your credentials.");
+      toast({
+        title: "Login failed",
+        description: (error as Error).message || "Please check your credentials and try again.",
+        variant: "destructive",
+      });
     }
   };
 

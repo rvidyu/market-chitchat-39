@@ -1,4 +1,3 @@
-
 import { Message } from "@/data/types";
 import { formatTimestamp } from "@/data/messageUtils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,6 +22,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   useEffect(() => {
     const fetchAvatar = async () => {
       try {
+        if (!message.senderId) return;
+        
         const { data: publicUrl } = supabase
           .storage
           .from('avatars')
@@ -30,17 +31,22 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         
         if (publicUrl?.publicUrl) {
           // Check if the file exists by making a HEAD request
-          const response = await fetch(publicUrl.publicUrl, { method: 'HEAD' });
+          const response = await fetch(publicUrl.publicUrl, { method: 'HEAD' })
+            .catch(() => ({ ok: false })); // Handle network errors gracefully
+            
           if (response.ok) {
             setAvatarUrl(publicUrl.publicUrl);
           }
         }
       } catch (err) {
         console.error("Error fetching avatar:", err);
+        // Don't set error state, just keep the avatar as null
       }
     };
     
-    fetchAvatar();
+    if (message.senderId) {
+      fetchAvatar();
+    }
   }, [message.senderId]);
   
   // Dynamic rendering for optimal performance
