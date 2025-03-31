@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -56,7 +57,7 @@ const Chat = () => {
     toast({
       title: "Marked as not spam",
       description: "The conversation has been moved back to your inbox.",
-      variant: "success",
+      variant: "default",
       className: "bg-white border-green-200",
     });
   };
