@@ -17,9 +17,10 @@ export const useMessageReading = () => {
     },
     onError: (error) => {
       console.error("Error marking messages as read:", error);
+      // Show a more user-friendly error message
       toast({
         title: "Error",
-        description: "Failed to mark messages as read.",
+        description: "Could not update read status. Please try again later.",
         variant: "destructive",
       });
     },
@@ -27,8 +28,12 @@ export const useMessageReading = () => {
 
   // Function to handle marking messages as read in a conversation
   const handleMarkMessagesAsRead = (conversationId: string) => {
-    if (!conversationId) return;
+    if (!conversationId) {
+      console.warn("Cannot mark messages as read: No conversation ID provided");
+      return;
+    }
     
+    console.log("Marking messages as read for conversation:", conversationId);
     markAsReadMutation.mutate(conversationId);
   };
 

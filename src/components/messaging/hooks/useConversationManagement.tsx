@@ -50,6 +50,7 @@ export const useConversationManagement = (
   // Memoized version of the mark messages as read handler
   const markMessagesAsRead = useCallback((conversationId: string) => {
     if (conversationId) {
+      console.log("Marking messages as read from conversation management:", conversationId);
       handleMarkMessagesAsRead(conversationId);
     }
   }, [handleMarkMessagesAsRead]);
@@ -61,6 +62,7 @@ export const useConversationManagement = (
 
   // Mark messages as read when a conversation is selected
   const handleSelectConversation = useCallback((conversationId: string) => {
+    console.log("Selecting conversation:", conversationId);
     setActiveConversationId(conversationId);
     
     // Mark messages as read immediately when the conversation is selected

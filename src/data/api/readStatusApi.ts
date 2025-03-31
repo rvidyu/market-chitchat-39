@@ -10,18 +10,27 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
       throw new Error('User not authenticated');
     }
     
+    // Validate the conversation ID format
+    if (!conversationId || typeof conversationId !== 'string') {
+      console.error('Invalid conversation ID:', conversationId);
+      throw new Error('Invalid conversation ID');
+    }
+    
     // Parse the conversation ID to get the participant IDs
     const participantIds = conversationId.split('-');
     
     if (participantIds.length !== 2) {
+      console.error('Invalid conversation ID format:', conversationId);
       throw new Error('Invalid conversation ID format');
     }
     
     // Get the other participant's ID
     const otherParticipantId = participantIds[0] === user.id ? participantIds[1] : participantIds[0];
     
+    console.log('Marking messages as read. Current user:', user.id, 'Other participant:', otherParticipantId);
+    
     // Update all messages from the other participant to the current user as read
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from('messages')
       .update({ is_read: true })
       .eq('sender_id', otherParticipantId)
@@ -32,6 +41,8 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
       console.error('Error marking messages as read:', error);
       throw error;
     }
+    
+    console.log('Successfully marked messages as read:', data);
     
   } catch (err) {
     console.error('Error in markMessagesAsRead:', err);
