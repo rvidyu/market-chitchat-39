@@ -88,6 +88,7 @@ const ImageUploader = ({ onImagesSelected, className }: ImageUploaderProps) => {
           canvas.toBlob(
             (blob) => {
               if (blob) {
+                // Fix: Properly create a new File object with the required arguments
                 const newFile = new File([blob], file.name, {
                   type: 'image/jpeg',
                   lastModified: Date.now(),
