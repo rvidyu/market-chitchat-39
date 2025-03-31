@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,7 +13,7 @@ const CACHE_EXPIRY = 30 * 60 * 1000; // 30 minutes cache expiry
 export const useMessageUser = (senderId: string) => {
   const [userData, setUserData] = useState<MessageUserData>({
     isCurrentUser: false,
-    senderName: "",  // Changed from "User" to an empty string
+    senderName: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -66,7 +65,7 @@ export const useMessageUser = (senderId: string) => {
           if (isMounted) {
             setUserData({
               isCurrentUser,
-              senderName: cachedProfile.name || `User ${senderId.substring(0, 5)}`
+              senderName: cachedProfile.name || `${senderId.substring(0, 5)}`
             });
             setIsLoading(false);
           }
@@ -145,4 +144,3 @@ export const useMessageUser = (senderId: string) => {
 
   return { ...userData, isLoading, error };
 };
-
