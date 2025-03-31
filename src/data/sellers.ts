@@ -20,32 +20,38 @@ export interface SellerData {
 // Function to fetch real sellers from Supabase
 export const fetchSellers = async (): Promise<SellerData[]> => {
   try {
+    // Instead of querying a non-existent 'sellers' table, let's query profiles with role=seller
     const { data, error } = await supabase
-      .from('sellers')
-      .select('*');
+      .from('profiles')
+      .select('*')
+      .eq('role', 'seller');
     
     if (error) {
       console.error("Error fetching sellers:", error);
-      return [];
+      return Object.values(MOCK_SELLERS);
+    }
+    
+    if (!data || data.length === 0) {
+      return Object.values(MOCK_SELLERS);
     }
     
     // Transform the data to match our SellerData interface
     return data.map((seller: any) => ({
       id: seller.id,
-      name: seller.name,
+      name: seller.name || "Unknown Seller",
       role: "seller",
       email: seller.email || "",
-      shopDescription: seller.description || "Welcome to my handmade and vintage shop!",
+      shopDescription: "Welcome to my handmade and vintage shop!",
       stats: {
-        itemsSold: seller.items_sold || 0,
-        rating: seller.rating || 4.5,
-        reviews: seller.reviews || 0,
-        products: seller.products || 0
+        itemsSold: 0,
+        rating: 4.5,
+        reviews: 0,
+        products: 0
       }
     }));
   } catch (error) {
     console.error("Error fetching sellers:", error);
-    return [];
+    return Object.values(MOCK_SELLERS);
   }
 };
 
