@@ -7,9 +7,10 @@ interface MessageUserData {
   senderName: string;
 }
 
-// Cache for user profiles to reduce redundant database queries
+// Global cache for user profiles to reduce redundant database queries
+// Using a more efficient structure with longer expiry time
 const userProfileCache: Record<string, { name: string; timestamp: number }> = {};
-const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes cache expiry
+const CACHE_EXPIRY = 30 * 60 * 1000; // 30 minutes cache expiry
 
 /**
  * Custom hook to fetch and determine message user information
@@ -24,28 +25,56 @@ export const useMessageUser = (senderId: string) => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    // Skip fetching for empty sender IDs
+    if (!senderId) {
+      setIsLoading(false);
+      return;
+    }
+    
+    let isMounted = true;
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
         
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
+        // Get current user from sessionStorage first if available
+        const sessionUser = sessionStorage.getItem('currentUser');
+        let user = sessionUser ? JSON.parse(sessionUser) : null;
+        
+        if (!user) {
+          // If not in session storage, get from supabase and store for future use
+          const { data } = await supabase.auth.getUser();
+          user = data.user;
+          if (user) {
+            sessionStorage.setItem('currentUser', JSON.stringify(user));
+          }
+        }
         
         // Determine if message is from current user
         const isCurrentUser = user ? senderId === user.id : false;
         
-        // Check cache first
+        // Use a shorter display name for the current user
+        if (isCurrentUser && isMounted) {
+          setUserData({
+            isCurrentUser: true,
+            senderName: "You"
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Check cache first - this avoids unnecessary database queries
         const now = Date.now();
         const cachedProfile = userProfileCache[senderId];
         
         if (cachedProfile && (now - cachedProfile.timestamp) < CACHE_EXPIRY) {
           // Use cached data if available and not expired
-          console.log("Using cached profile data for:", senderId);
-          setUserData({
-            isCurrentUser,
-            senderName: isCurrentUser ? "You" : cachedProfile.name
-          });
-          setIsLoading(false);
+          if (isMounted) {
+            setUserData({
+              isCurrentUser,
+              senderName: cachedProfile.name
+            });
+            setIsLoading(false);
+          }
           return;
         }
         
@@ -56,11 +85,18 @@ export const useMessageUser = (senderId: string) => {
           .eq('id', senderId)
           .maybeSingle();
         
+        if (!isMounted) return;
+        
         if (profileError) {
           console.error("Error fetching profile:", profileError);
+          const fallbackName = `User ${senderId.substring(0, 5)}`;
+          userProfileCache[senderId] = {
+            name: fallbackName,
+            timestamp: now
+          };
           setUserData({
             isCurrentUser,
-            senderName: isCurrentUser ? "You" : `User ${senderId.substring(0, 7)}`
+            senderName: fallbackName
           });
         } else if (profile && profile.name) {
           // Update cache with new data
@@ -69,14 +105,13 @@ export const useMessageUser = (senderId: string) => {
             timestamp: now
           };
           
-          // If it's the current user, show "You", otherwise show their name
           setUserData({
             isCurrentUser,
-            senderName: isCurrentUser ? "You" : profile.name
+            senderName: profile.name
           });
         } else {
           // Fallback for when profile doesn't exist or name is null
-          const fallbackName = `User ${senderId.substring(0, 7)}`;
+          const fallbackName = `User ${senderId.substring(0, 5)}`;
           
           // Cache the fallback name too to prevent repeated lookups
           userProfileCache[senderId] = {
@@ -86,22 +121,31 @@ export const useMessageUser = (senderId: string) => {
           
           setUserData({
             isCurrentUser,
-            senderName: isCurrentUser ? "You" : fallbackName
+            senderName: fallbackName
           });
         }
       } catch (error) {
         console.error("Error in useMessageUser:", error);
-        setError(error instanceof Error ? error : new Error(String(error)));
-        setUserData({
-          isCurrentUser: false,
-          senderName: "User"
-        });
+        if (isMounted) {
+          setError(error instanceof Error ? error : new Error(String(error)));
+          setUserData({
+            isCurrentUser: false,
+            senderName: "User"
+          });
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     fetchUserData();
+    
+    // Clean up function to prevent state updates if component unmounts during fetch
+    return () => {
+      isMounted = false;
+    };
   }, [senderId]);
 
   return { ...userData, isLoading, error };

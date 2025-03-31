@@ -4,6 +4,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
+// Global avatar cache to reduce storage requests
+const avatarCache: Record<string, { url: string | null, timestamp: number }> = {};
+const AVATAR_CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour cache expiry
+
 interface MessageAvatarProps {
   senderId: string;
   isCurrentUser: boolean;
@@ -21,13 +25,16 @@ export default function MessageAvatar({
   useEffect(() => {
     if (!senderId) return;
     
-    // Create a cache key based on the sender ID
-    const cacheKey = `avatar_${senderId}`;
+    let isMounted = true;
     
     // Check if we have a cached avatar URL
-    const cachedUrl = sessionStorage.getItem(cacheKey);
-    if (cachedUrl) {
-      setAvatarUrl(cachedUrl !== "null" ? cachedUrl : null);
+    const now = Date.now();
+    const cachedAvatar = avatarCache[senderId];
+    
+    if (cachedAvatar && (now - cachedAvatar.timestamp) < AVATAR_CACHE_EXPIRY) {
+      if (isMounted) {
+        setAvatarUrl(cachedAvatar.url);
+      }
       return;
     }
     
@@ -41,28 +48,35 @@ export default function MessageAvatar({
           .getPublicUrl(`${senderId}/avatar`);
         
         if (data?.publicUrl) {
-          // Check if the file exists by making a HEAD request
-          fetch(data.publicUrl, { method: 'HEAD' })
-            .then(response => {
-              if (response.ok) {
-                setAvatarUrl(data.publicUrl);
-                // Cache the URL in session storage
-                sessionStorage.setItem(cacheKey, data.publicUrl);
-              } else {
-                sessionStorage.setItem(cacheKey, "null");
-              }
-            })
-            .catch(() => {
-              sessionStorage.setItem(cacheKey, "null");
-            });
+          // Check if the file exists with a HEAD request
+          const response = await fetch(data.publicUrl, { 
+            method: 'HEAD',
+            cache: 'force-cache' // Force browser caching
+          });
+          
+          if (!isMounted) return;
+          
+          if (response.ok) {
+            setAvatarUrl(data.publicUrl);
+            // Cache the URL
+            avatarCache[senderId] = { url: data.publicUrl, timestamp: now };
+          } else {
+            avatarCache[senderId] = { url: null, timestamp: now };
+          }
         }
       } catch (err) {
         console.error("Error fetching avatar:", err);
-        sessionStorage.setItem(cacheKey, "null");
+        if (isMounted) {
+          avatarCache[senderId] = { url: null, timestamp: now };
+        }
       }
     };
     
     fetchAvatar();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [senderId]);
 
   // Get initials for avatar fallback

@@ -13,18 +13,27 @@ export const useRealtimeMessages = (
 
   // Set up enhanced realtime subscription for new messages
   useEffect(() => {
-    // Get the current authenticated user from Supabase
+    let userId: string | null = null;
+    
+    // Get the current authenticated user from sessionStorage first if available
     const setupRealtimeListener = async () => {
-      const { data } = await supabase.auth.getUser();
-      const user = data.user;
-      
-      if (user) {
-        // Enable realtime for the messages table if not already enabled
-        await supabase
-          .from('messages')
-          .select('id')
-          .limit(1);
-
+      try {
+        const sessionUser = sessionStorage.getItem('currentUser');
+        let user = sessionUser ? JSON.parse(sessionUser) : null;
+        
+        if (!user) {
+          // If not in session storage, get from supabase and store for future use
+          const { data } = await supabase.auth.getUser();
+          user = data.user;
+          if (user) {
+            sessionStorage.setItem('currentUser', JSON.stringify(user));
+          }
+        }
+        
+        if (!user) return null;
+        
+        userId = user.id;
+        
         // Set up the channel for real-time messages with more specific filters
         const channel = supabase
           .channel('public:messages')
@@ -34,7 +43,7 @@ export const useRealtimeMessages = (
               event: 'INSERT', 
               schema: 'public', 
               table: 'messages',
-              filter: `recipient_id=eq.${user.id}`
+              filter: `recipient_id=eq.${userId}`
             },
             (payload) => {
               console.log("New message received:", payload);
@@ -69,15 +78,18 @@ export const useRealtimeMessages = (
           console.log("Cleaning up realtime subscription");
           supabase.removeChannel(channel);
         };
+      } catch (error) {
+        console.error("Error setting up realtime subscription:", error);
+        return null;
       }
     };
     
     // Call the async function
-    const cleanup = setupRealtimeListener();
+    const cleanupPromise = setupRealtimeListener();
     
     // Return cleanup function
     return () => {
-      cleanup.then(cleanupFn => cleanupFn && cleanupFn());
+      cleanupPromise.then(cleanupFn => cleanupFn && cleanupFn());
     };
   }, [queryClient, toast, activeConversationId, onNewMessage]);
 };
