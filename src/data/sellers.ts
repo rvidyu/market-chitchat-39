@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SellerStats {
@@ -55,7 +54,7 @@ interface SupabaseProfile {
   role?: string;
   created_at?: string; 
   updated_at?: string;
-  shop_description: string; // Updated to match the database column - making it required
+  shop_description: string;
 }
 
 // Function to fetch real sellers from Supabase
@@ -69,7 +68,14 @@ export const fetchSellers = async (): Promise<SellerData[]> => {
     
     if (error) {
       console.error("Error fetching sellers:", error);
-      return [];
+      // Return mock data as fallback if query fails
+      return Object.values(MOCK_SELLERS);
+    }
+    
+    // If no sellers found in database, use mock data
+    if (!data || data.length === 0) {
+      console.log("No sellers found in database, using mock data");
+      return Object.values(MOCK_SELLERS);
     }
     
     // Transform the data to match our SellerData interface
@@ -88,7 +94,8 @@ export const fetchSellers = async (): Promise<SellerData[]> => {
     }));
   } catch (error) {
     console.error("Error fetching sellers:", error);
-    return [];
+    // Return mock data as fallback
+    return Object.values(MOCK_SELLERS);
   }
 };
 

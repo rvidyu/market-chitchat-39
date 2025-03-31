@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { SellerData, fetchSellers } from "@/data/sellers";
 import ShopOverview from "./ShopOverview";
@@ -11,8 +12,10 @@ const FeaturedShops = () => {
     const loadSellers = async () => {
       setIsLoading(true);
       try {
-        // Fetch sellers from Supabase
+        console.log("FeaturedShops: Fetching sellers...");
+        // Fetch sellers from Supabase or fallback to mock data
         const sellerData = await fetchSellers();
+        console.log("FeaturedShops: Sellers fetched:", sellerData);
         setSellers(sellerData);
       } catch (error) {
         console.error("Failed to load sellers:", error);
