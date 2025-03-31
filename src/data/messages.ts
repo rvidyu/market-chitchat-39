@@ -5,3 +5,4 @@ export * from './users';
 export * from './messagingProducts';
 export * from './conversations';
 export * from './messageUtils';
+export * from './api';

@@ -11,7 +11,7 @@ import { MessageSquare } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Product } from "@/data/products";
 import { SellerData } from "@/data/sellers";
-import { sendMessage } from "@/data/messageApi";
+import { sendMessage } from "@/data/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface MessageStarterProps {
