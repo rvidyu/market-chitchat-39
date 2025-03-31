@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, LogIn, Info } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Mail, Lock, LogIn } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -44,11 +43,6 @@ const Login = () => {
     }
   };
 
-  const loginAsDemo = (role: "buyer" | "seller") => {
-    setEmail(role === "buyer" ? "buyer@example.com" : "seller@example.com");
-    setPassword("password123");
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
@@ -56,43 +50,6 @@ const Login = () => {
           <h1 className="text-3xl font-bold text-messaging-primary">Handmade & Vintage Marketplace</h1>
           <p className="text-messaging-muted mt-2">Sign in to access your account</p>
         </div>
-        
-        <Alert className="mb-6 bg-blue-50 border-blue-200">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <div className="font-medium">Demo Accounts:</div>
-            <div className="grid grid-cols-2 gap-x-4 mt-2 text-sm">
-              <div>
-                <strong>Buyer:</strong><br/>
-                buyer@example.com<br/>
-                password123
-              </div>
-              <div>  
-                <strong>Seller:</strong><br/>
-                seller@example.com<br/>
-                password123
-              </div>
-            </div>
-            <div className="flex space-x-2 mt-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => loginAsDemo("buyer")}
-                className="text-xs h-8"
-              >
-                Use Buyer
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => loginAsDemo("seller")}
-                className="text-xs h-8"
-              >
-                Use Seller
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
         
         <Card>
           <CardHeader>
