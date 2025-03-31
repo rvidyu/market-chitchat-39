@@ -1,12 +1,14 @@
 
 import { Message } from "@/data/types";
 import { formatTimestamp } from "@/data/messageUtils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ProductMessageCard from "./ProductMessageCard";
 import MessageImageAttachment from "./MessageImageAttachment";
 import { useMessageUser } from "@/hooks/useMessageUser";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MessageBubbleProps {
   message: Message;
@@ -15,6 +17,31 @@ interface MessageBubbleProps {
 export default function MessageBubble({ message }: MessageBubbleProps) {
   // Use our custom hook to get user information
   const { isCurrentUser, senderName, isLoading } = useMessageUser(message.senderId);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  
+  // Fetch avatar for the message sender
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      try {
+        const { data: publicUrl } = supabase
+          .storage
+          .from('avatars')
+          .getPublicUrl(`${message.senderId}/avatar`);
+        
+        if (publicUrl?.publicUrl) {
+          // Check if the file exists by making a HEAD request
+          const response = await fetch(publicUrl.publicUrl, { method: 'HEAD' });
+          if (response.ok) {
+            setAvatarUrl(publicUrl.publicUrl);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching avatar:", err);
+      }
+    };
+    
+    fetchAvatar();
+  }, [message.senderId]);
   
   // Dynamic rendering for optimal performance
   const renderMessageContent = () => (
@@ -55,18 +82,22 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       "flex items-start gap-2 mb-4",
       isCurrentUser ? "flex-row-reverse" : "",
     )}>
-      {/* Avatar with user initials */}
+      {/* Avatar with user profile image or fallback */}
       <Avatar className={cn(
         "h-8 w-8",
         isCurrentUser ? "bg-messaging-primary" : "bg-messaging-secondary",
       )}>
-        <AvatarFallback className={cn(
-          isCurrentUser 
-            ? "bg-messaging-primary text-white" 
-            : "bg-messaging-secondary text-messaging-primary"
-        )}>
-          {isCurrentUser ? "You" : senderName.charAt(0).toUpperCase()}
-        </AvatarFallback>
+        {avatarUrl ? (
+          <AvatarImage src={avatarUrl} alt={senderName} />
+        ) : (
+          <AvatarFallback className={cn(
+            isCurrentUser 
+              ? "bg-messaging-primary text-white" 
+              : "bg-messaging-secondary text-messaging-primary"
+          )}>
+            {isCurrentUser ? "You" : senderName.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        )}
       </Avatar>
       
       <div className="flex flex-col max-w-[80%]">
