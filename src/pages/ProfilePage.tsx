@@ -1,49 +1,15 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Header from "@/components/Header";
 import ProfileEditor from "@/components/profile/ProfileEditor";
 import ProfileView from "@/components/profile/ProfileView";
 import { useAuth } from "@/contexts/auth";
 import { Loader2, Pencil, Eye } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 const ProfilePage = () => {
   const { user, loading } = useAuth();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
-
-  useEffect(() => {
-    if (user?.id) {
-      // Fetch user's avatar
-      const fetchAvatar = async () => {
-        try {
-          const { data } = supabase
-            .storage
-            .from('avatars')
-            .getPublicUrl(`${user.id}/avatar`);
-          
-          if (data?.publicUrl) {
-            // Check if the file exists
-            const response = await fetch(data.publicUrl, { method: 'HEAD' });
-            if (response.ok) {
-              // Add cache busting parameter
-              setAvatarUrl(`${data.publicUrl}?t=${Date.now()}`);
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching avatar:", error);
-        }
-      };
-
-      fetchAvatar();
-      
-      // Set up interval to periodically refresh the avatar
-      const intervalId = setInterval(fetchAvatar, 60000);
-      
-      return () => clearInterval(intervalId);
-    }
-  }, [user, editMode]);
 
   if (loading) {
     return (

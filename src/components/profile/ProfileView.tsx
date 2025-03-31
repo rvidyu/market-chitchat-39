@@ -11,6 +11,7 @@ const ProfileView = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [bio, setBio] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [profileName, setProfileName] = useState<string>("");
 
   useEffect(() => {
     if (user) {
@@ -24,7 +25,10 @@ const ProfileView = () => {
           
           if (data?.publicUrl) {
             // Check if the file exists
-            const response = await fetch(data.publicUrl, { method: 'HEAD' });
+            const response = await fetch(data.publicUrl, { 
+              method: 'HEAD',
+              cache: 'no-store' 
+            });
             if (response.ok) {
               // Add a timestamp param to bust cache
               setAvatarUrl(`${data.publicUrl}?t=${Date.now()}`);
@@ -35,18 +39,23 @@ const ProfileView = () => {
         }
       };
 
-      // Fetch profile data including bio
+      // Fetch profile data including bio and name
       const fetchProfileData = async () => {
         setLoading(true);
         try {
           const { data } = await supabase
             .from('profiles')
-            .select('shop_description')
+            .select('shop_description, name')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
             
-          if (data?.shop_description) {
-            setBio(data.shop_description);
+          if (data) {
+            if (data.shop_description) {
+              setBio(data.shop_description);
+            }
+            if (data.name) {
+              setProfileName(data.name);
+            }
           }
         } catch (error) {
           console.error("Error fetching profile data:", error);
@@ -77,13 +86,14 @@ const ProfileView = () => {
         <div className="flex flex-col items-center space-y-4">
           <Avatar className="h-24 w-24">
             {avatarUrl ? (
-              <AvatarImage src={avatarUrl} alt={user.name || "Profile"} />
+              <AvatarImage src={avatarUrl} alt={profileName || user.name || "Profile"} />
             ) : (
               <AvatarFallback className="text-lg bg-gradient-to-r from-primary to-secondary text-white">
-                {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                {profileName ? profileName.charAt(0).toUpperCase() : user.name ? user.name.charAt(0).toUpperCase() : "U"}
               </AvatarFallback>
             )}
           </Avatar>
+          <h2 className="text-xl font-semibold">{loading ? "Loading..." : profileName || "No name set"}</h2>
         </div>
 
         <div className="space-y-4">
@@ -91,7 +101,7 @@ const ProfileView = () => {
             <User className="h-5 w-5 text-primary mt-0.5" />
             <div>
               <h3 className="font-medium text-sm text-muted-foreground">Name</h3>
-              <p className="text-base">{user.name || "Not provided"}</p>
+              <p className="text-base">{loading ? "Loading..." : profileName || "Not provided"}</p>
             </div>
           </div>
 

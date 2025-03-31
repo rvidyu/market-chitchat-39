@@ -43,22 +43,27 @@ const ProfileEditor = () => {
       if (user.name) setName(user.name);
       if (user.email) setEmail(user.email);
       
-      // Fetch the shop description (bio) if it exists
-      const fetchShopDescription = async () => {
+      // Fetch the shop description (bio) and name if it exists
+      const fetchProfileData = async () => {
         if (!user.id) return;
         
         const { data } = await supabase
           .from('profiles')
-          .select('shop_description')
+          .select('shop_description, name')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
           
-        if (data?.shop_description) {
-          setBio(data.shop_description);
+        if (data) {
+          if (data.shop_description) {
+            setBio(data.shop_description);
+          }
+          if (data.name) {
+            setName(data.name);
+          }
         }
       };
       
-      fetchShopDescription();
+      fetchProfileData();
     }
   }, [user, setName, setEmail, setBio]);
 
@@ -122,7 +127,7 @@ const ProfileEditor = () => {
         />
 
         <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
+          <Label htmlFor="name">Profile Name</Label>
           <Input
             id="name"
             value={name}
