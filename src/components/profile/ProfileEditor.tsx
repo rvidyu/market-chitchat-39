@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,19 +18,15 @@ const ProfileEditor = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const { toast } = useToast();
 
-  // Fetch existing avatar on mount
-  useState(() => {
-    if (user?.id) {
-      fetchAvatar();
-    }
-  });
-
+  // Define fetchAvatar function before using it
   const fetchAvatar = async () => {
     try {
+      if (!user?.id) return;
+      
       const { data: publicUrl } = supabase
         .storage
         .from('avatars')
-        .getPublicUrl(`${user!.id}/avatar`);
+        .getPublicUrl(`${user.id}/avatar`);
       
       if (publicUrl?.publicUrl) {
         // Check if the file exists by making a HEAD request
@@ -43,6 +39,13 @@ const ProfileEditor = () => {
       console.error("Error fetching avatar:", error);
     }
   };
+
+  // Use useEffect to fetch avatar on component mount
+  useEffect(() => {
+    if (user?.id) {
+      fetchAvatar();
+    }
+  }, [user]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
