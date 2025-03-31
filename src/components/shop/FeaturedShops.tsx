@@ -3,11 +3,14 @@ import { useState, useEffect } from "react";
 import { SellerData, fetchSellers } from "@/data/sellers";
 import ShopOverview from "./ShopOverview";
 import { Award, TrendingUp, Store } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const FeaturedShops = () => {
   const [sellers, setSellers] = useState<SellerData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadSellers = async () => {
@@ -31,12 +34,22 @@ const FeaturedShops = () => {
     loadSellers();
   }, []);
   
+  const handleViewAllSellers = () => {
+    // This would navigate to a page that shows all sellers
+    navigate("/explore-sellers");
+  };
+  
   if (isLoading) {
     return (
       <div className="w-full">
-        <div className="flex items-center gap-2 mb-6">
-          <Award className="h-6 w-6 text-messaging-primary" />
-          <h2 className="text-2xl font-bold text-messaging-primary">Featured Sellers</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Award className="h-6 w-6 text-messaging-primary" />
+            <h2 className="text-2xl font-bold text-messaging-primary">Featured Sellers</h2>
+            <span className="text-sm bg-messaging-accent/10 text-messaging-accent px-2 py-0.5 rounded-full flex items-center ml-2">
+              <TrendingUp className="h-3.5 w-3.5 mr-1" /> Trending
+            </span>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
@@ -85,15 +98,26 @@ const FeaturedShops = () => {
   
   return (
     <div className="w-full">
-      <div className="flex items-center gap-2 mb-6">
-        <Award className="h-6 w-6 text-messaging-primary" />
-        <h2 className="text-2xl font-bold text-messaging-primary">Featured Sellers</h2>
-        <span className="text-sm bg-messaging-accent/10 text-messaging-accent px-2 py-0.5 rounded-full flex items-center ml-2">
-          <TrendingUp className="h-3.5 w-3.5 mr-1" /> Trending
-        </span>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Award className="h-6 w-6 text-messaging-primary" />
+          <h2 className="text-2xl font-bold text-messaging-primary">Featured Sellers</h2>
+          <span className="text-sm bg-messaging-accent/10 text-messaging-accent px-2 py-0.5 rounded-full flex items-center ml-2">
+            <TrendingUp className="h-3.5 w-3.5 mr-1" /> Trending
+          </span>
+        </div>
+        {sellers.length > 3 && (
+          <Button 
+            variant="outline" 
+            onClick={handleViewAllSellers}
+            className="text-messaging-primary border-messaging-primary hover:bg-messaging-primary/10"
+          >
+            View All Sellers
+          </Button>
+        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sellers.map((seller) => (
+        {sellers.slice(0, 3).map((seller) => (
           <ShopOverview key={seller.id} seller={seller} />
         ))}
       </div>

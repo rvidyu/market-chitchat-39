@@ -21,13 +21,13 @@ export interface Message {
   isRead: boolean;
   product?: Product;
   images?: string[];
-  conversationId: string; // Changed from optional to required
+  conversationId: string;
 }
 
 export interface Conversation {
   id: string;
   participants: User[];
   messages: Message[];
-  lastActivity: string; // Make sure this is a string to match the timestamp format
+  lastActivity: string;
   unreadCount: number;
 }
