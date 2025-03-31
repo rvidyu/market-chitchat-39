@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
@@ -46,19 +45,29 @@ const ProfileEditor = () => {
       const fetchProfileData = async () => {
         if (!user.id) return;
         
-        const { data } = await supabase
-          .from('profiles')
-          .select('shop_description, name')
-          .eq('id', user.id)
-          .maybeSingle();
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('shop_description, name')
+            .eq('id', user.id)
+            .maybeSingle();
           
-        if (data) {
-          if (data.shop_description) {
-            setBio(data.shop_description);
+          if (error) {
+            console.error("Error fetching profile data:", error);
+            return;
           }
-          if (data.name) {
-            setName(data.name);
+            
+          if (data) {
+            console.log("Fetched profile data:", data);
+            if (data.shop_description) {
+              setBio(data.shop_description);
+            }
+            if (data.name) {
+              setName(data.name);
+            }
           }
+        } catch (error) {
+          console.error("Exception fetching profile data:", error);
         }
       };
       
@@ -69,10 +78,17 @@ const ProfileEditor = () => {
   const handleProfileUpdate = async () => {
     setIsLoading(true);
     try {
+      console.log("Starting profile update with name:", name);
+      
       // Update profile data
       const { error: profileError } = await updateProfile();
       
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        throw profileError;
+      }
+
+      console.log("Profile successfully updated");
 
       // Upload avatar if selected
       if (avatarFile) {

@@ -26,6 +26,8 @@ export const useProfileUpdate = ({ userId, session }: UseProfileUpdateProps) => 
       return { error: new Error("Authentication error") };
     }
     
+    console.log("Updating profile with name:", name);
+    
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ 
@@ -36,6 +38,7 @@ export const useProfileUpdate = ({ userId, session }: UseProfileUpdateProps) => 
       .eq('id', userId);
     
     if (updateError) {
+      console.error("Profile update error:", updateError);
       return { error: updateError };
     }
     
