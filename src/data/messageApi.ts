@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Message, Conversation, Product, User } from './types';
 
@@ -55,13 +54,20 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
           msg => msg.sender_id === partnerId && !msg.is_read
         ).length || 0;
         
+        // Get current user's profile for the name
+        const { data: currentUserProfile } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', user.id)
+          .single();
+        
         // Create conversation object - Making sure all properties match the type
         const conversation: Conversation = {
           id: conversationId,
           participants: [
             {
               id: user.id,
-              name: user.user_metadata?.name || user.email || "You",
+              name: currentUserProfile?.name || user.user_metadata?.name || user.email || "You",
               avatar: "", // Adding required avatar field
               isOnline: true,
             },
