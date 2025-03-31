@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Conversation, User } from "@/data/types";
 import { formatTimestamp } from "@/data/messageUtils";
@@ -76,6 +77,9 @@ export default function ConversationItem({
   const lastMessage = conversation.messages[conversation.messages.length - 1];
   const isLastMessageFromCurrentUser = lastMessage?.senderId === currentUserId;
   
+  // Don't show unread badge when conversation is active
+  const showUnreadBadge = !isActive && conversation.unreadCount > 0 && !isLastMessageFromCurrentUser;
+  
   const handleMarkNotSpam = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onMarkNotSpam) {
@@ -140,7 +144,7 @@ export default function ConversationItem({
         <div className="flex justify-between items-center mt-1">
           <p className={cn(
             "text-sm truncate max-w-[180px]",
-            conversation.unreadCount > 0 && !isLastMessageFromCurrentUser ? "font-medium text-messaging-text" : "text-messaging-muted"
+            showUnreadBadge ? "font-medium text-messaging-text" : "text-messaging-muted"
           )}>
             {isLastMessageFromCurrentUser ? (
               <span className="text-messaging-muted">You: </span>
@@ -148,7 +152,7 @@ export default function ConversationItem({
             {lastMessage?.text}
           </p>
           
-          {conversation.unreadCount > 0 && !isLastMessageFromCurrentUser && (
+          {showUnreadBadge && (
             <Badge variant="default" className="bg-messaging-primary ml-2">
               {conversation.unreadCount}
             </Badge>

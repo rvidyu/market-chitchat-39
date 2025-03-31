@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Message, Conversation, Product, User } from './types';
 
@@ -163,6 +162,25 @@ export const sendMessage = async (
     const participantIds = [user.id, recipientId].sort();
     const conversationId = participantIds.join('-');
     
+    // Update or create the conversation entry
+    const conversationData = {
+      sender_id: user.id,
+      recipient_id: recipientId,
+      timestamp: new Date().toISOString(),
+      last_message_id: newMessage.id,
+      is_read: false
+    };
+
+    // Upsert the conversation to keep track of the latest message
+    const { error: convError } = await supabase
+      .from('conversations')
+      .upsert(conversationData)
+      .select();
+      
+    if (convError) {
+      console.error('Error updating conversation:', convError);
+    }
+    
     // Return the created message
     return {
       id: newMessage.id,
@@ -212,7 +230,19 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
       console.error('Error marking messages as read:', error);
       throw error;
     }
+    
+    // Also update the conversation record to indicate messages have been read
+    const { error: convError } = await supabase
+      .from('conversations')
+      .update({ is_read: true })
+      .eq('sender_id', otherUserId)
+      .eq('recipient_id', user.id);
+      
+    if (convError) {
+      console.error('Error updating conversation read status:', convError);
+    }
   } catch (err) {
     console.error('Error marking messages as read:', err);
+    throw err; // Re-throw to allow mutation error handling
   }
 };

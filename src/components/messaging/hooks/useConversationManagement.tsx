@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { Conversation } from "@/data/types";
 import { useToast } from "@/hooks/use-toast";
 import { fetchConversations, sendMessage, markMessagesAsRead } from "@/data/messageApi";
@@ -95,24 +96,39 @@ export const useConversationManagement = (
   };
 
   // Mark messages as read when a conversation is selected
-  const handleSelectConversation = (conversationId: string) => {
+  const handleSelectConversation = useCallback((conversationId: string) => {
     setActiveConversationId(conversationId);
     
-    // Mark messages as read
+    // Mark messages as read and force refresh UI
     if (conversationId) {
-      markAsReadMutation.mutate(conversationId);
+      markAsReadMutation.mutate(conversationId, {
+        onSuccess: () => {
+          // Immediately update the unread count in the UI for this conversation
+          queryClient.setQueryData(['conversations'], (oldData: Conversation[] | undefined) => {
+            if (!oldData) return [];
+            
+            return oldData.map(conversation => {
+              if (conversation.id === conversationId) {
+                // Set unread count to 0 for this conversation
+                return { ...conversation, unreadCount: 0 };
+              }
+              return conversation;
+            });
+          });
+          
+          // Then invalidate to fetch fresh data from the server
+          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        }
+      });
     }
-  };
+  }, [markAsReadMutation, queryClient]);
 
   // Update active conversation when initialConversationId changes
   useEffect(() => {
     if (initialConversationId) {
-      setActiveConversationId(initialConversationId);
-      
-      // Mark messages as read
-      markAsReadMutation.mutate(initialConversationId);
+      handleSelectConversation(initialConversationId);
     }
-  }, [initialConversationId]);
+  }, [initialConversationId, handleSelectConversation]);
 
   // Set up realtime subscription for new messages
   useEffect(() => {
