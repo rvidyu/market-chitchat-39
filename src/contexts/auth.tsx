@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, usingMockSupabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
@@ -19,10 +18,8 @@ interface AuthContextType {
   logout: () => void;
 }
 
-// Create auth context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user data (only for demo purposes)
 export function getMockUser(role: 'buyer' | 'seller'): User {
   return {
     id: role === 'buyer' ? 'buyer-1' : 'seller-1',
@@ -32,22 +29,28 @@ export function getMockUser(role: 'buyer' | 'seller'): User {
   };
 }
 
-// Auth provider component
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Check if user is already logged in when the app loads
   useEffect(() => {
     const checkAuthState = async () => {
       try {
-        // Try to get session from Supabase
+        const savedUser = localStorage.getItem('user');
+        
+        if (usingMockSupabase) {
+          if (savedUser) {
+            setUser(JSON.parse(savedUser));
+          }
+          setLoading(false);
+          return;
+        }
+        
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          // User is logged in with Supabase
           const { data: userData, error: userError } = await supabase
             .from('users')
             .select('*')
@@ -61,23 +64,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               email: userData.email,
               role: userData.role
             });
-          } else {
-            // Fallback to local storage if Supabase fails
-            const savedUser = localStorage.getItem('user');
-            if (savedUser) {
-              setUser(JSON.parse(savedUser));
-            }
-          }
-        } else {
-          // Check local storage as fallback
-          const savedUser = localStorage.getItem('user');
-          if (savedUser) {
+          } else if (savedUser) {
             setUser(JSON.parse(savedUser));
           }
+        } else if (savedUser) {
+          setUser(JSON.parse(savedUser));
         }
       } catch (error) {
         console.error('Error checking auth state:', error);
-        // Fallback to local storage
         const savedUser = localStorage.getItem('user');
         if (savedUser) {
           setUser(JSON.parse(savedUser));
@@ -90,27 +84,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     checkAuthState();
   }, []);
 
-  // Login function
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
     
     try {
-      // First, check if we already have a user logged in
       if (user) {
-        // User is already logged in, redirect to home
         navigate('/');
         return;
       }
 
-      // Try with Supabase
+      if (usingMockSupabase) {
+        if (email === 'buyer@example.com' && password === 'password') {
+          const mockUser = getMockUser('buyer');
+          setUser(mockUser);
+          localStorage.setItem('user', JSON.stringify(mockUser));
+          navigate('/');
+          return;
+        } else if (email === 'seller@example.com' && password === 'password') {
+          const mockUser = getMockUser('seller');
+          setUser(mockUser);
+          localStorage.setItem('user', JSON.stringify(mockUser));
+          navigate('/');
+          return;
+        } else {
+          setError('Invalid email or password');
+          setLoading(false);
+          return;
+        }
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) {
-        // Fallback to mock login for demo
+        console.error("Supabase auth error:", error);
         if (email === 'buyer@example.com' && password === 'password') {
           const mockUser = getMockUser('buyer');
           setUser(mockUser);
@@ -128,7 +138,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       if (data.user) {
-        // Get user data from Supabase
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
@@ -157,13 +166,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Register function
   const register = async (name: string, email: string, password: string, role: 'buyer' | 'seller') => {
     setLoading(true);
     setError(null);
     
     try {
-      // Try with Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -176,7 +183,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       if (error) {
-        // Fallback to mock registration for demo
         const mockUser = {
           id: `user-${Date.now()}`,
           name,
@@ -190,7 +196,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       if (data.user) {
-        // Create user profile in Supabase
         const { error: profileError } = await supabase
           .from('users')
           .insert({
@@ -224,16 +229,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Logout function
   const logout = async () => {
     try {
-      // Log out from Supabase
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Error logging out:', error);
     }
     
-    // Always clear local state regardless of Supabase
     setUser(null);
     localStorage.removeItem('user');
     navigate('/login');
@@ -246,7 +248,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-// Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
