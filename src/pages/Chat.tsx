@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -10,14 +11,12 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import QuickReplyManager from "@/components/messaging/QuickReplyManager";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
 
 const Chat = () => {
   const { user } = useAuth();
   const { sellerId, productId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [quickReplyManagerOpen, setQuickReplyManagerOpen] = useState(false);
 
@@ -25,17 +24,6 @@ const Chat = () => {
     // Handle conversation ID from URL params or location state
     const initChat = async () => {
       if (!user) return;
-      
-      // First check if there's a conversationId in the location state
-      const conversationIdFromState = location.state?.conversationId;
-      if (conversationIdFromState) {
-        console.log("Found conversation ID in state:", conversationIdFromState);
-        setActiveConversationId(conversationIdFromState);
-        
-        // Force refresh conversations data
-        queryClient.invalidateQueries({ queryKey: ['conversations'] });
-        return;
-      }
       
       // Check if seller ID is in state (used by ShopOverview)
       const sellerIdFromState = location.state?.sellerId;
@@ -45,7 +33,6 @@ const Chat = () => {
         // Generate conversation ID (sort IDs to ensure consistency)
         const participantIds = [user.id, sellerIdToUse].sort();
         const conversationId = participantIds.join('-');
-        console.log("Generated conversation ID:", conversationId);
         setActiveConversationId(conversationId);
         
         // If we also have a product ID, we should start the conversation with that product
@@ -93,19 +80,6 @@ const Chat = () => {
                 
               if (sendError) {
                 console.error('Error sending product message:', sendError);
-              } else {
-                // Also update conversations table to ensure the conversation appears
-                await supabase.from('conversations').upsert({
-                  sender_id: user.id,
-                  recipient_id: sellerIdToUse,
-                  text: `Hi, I'm interested in this product:`,
-                  timestamp: new Date().toISOString(),
-                  is_read: false,
-                  conversation_id: conversationId
-                }, { onConflict: 'conversation_id' });
-                
-                // Force refresh conversations data
-                queryClient.invalidateQueries({ queryKey: ['conversations'] });
               }
             }
           } catch (err) {
@@ -113,10 +87,15 @@ const Chat = () => {
           }
         }
       }
+      
+      // Handle conversation ID from location state (e.g., from notifications)
+      if (location.state?.conversationId) {
+        setActiveConversationId(location.state.conversationId);
+      }
     };
     
     initChat();
-  }, [location.state, sellerId, productId, user, navigate, queryClient]);
+  }, [location.state, sellerId, productId, user, navigate]);
 
   const handleMarkNotSpam = () => {
     toast({
