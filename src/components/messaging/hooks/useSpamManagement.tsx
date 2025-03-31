@@ -17,7 +17,7 @@ export const useSpamManagement = ({ onNotSpamMarked }: UseSpamManagementProps = 
     // Add the conversation to spam list
     setSpamConversations([...spamConversations, conversationId]);
     
-    // Show notification
+    // Show notification component (not toast)
     setShowSpamNotification(true);
     setLastReportedSpam(conversationId);
     
@@ -26,13 +26,7 @@ export const useSpamManagement = ({ onNotSpamMarked }: UseSpamManagementProps = 
       setShowSpamNotification(false);
     }, 8000);
     
-    // Show toast
-    toast({
-      title: "Message reported as spam",
-      description: "This conversation has been moved to your spam folder",
-      variant: "default",
-      className: "border-red-200",
-    });
+    // Removed toast notification
   };
   
   // Handle undoing spam report
