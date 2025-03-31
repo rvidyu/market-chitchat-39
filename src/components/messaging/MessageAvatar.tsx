@@ -34,19 +34,20 @@ export default function MessageAvatar({
     // Fetch avatar for the message sender
     const fetchAvatar = async () => {
       try {
-        const { data: publicUrl } = supabase
+        // Get public URL from Supabase storage
+        const { data } = supabase
           .storage
           .from('avatars')
           .getPublicUrl(`${senderId}/avatar`);
         
-        if (publicUrl?.publicUrl) {
+        if (data?.publicUrl) {
           // Check if the file exists by making a HEAD request
-          fetch(publicUrl.publicUrl, { method: 'HEAD' })
+          fetch(data.publicUrl, { method: 'HEAD' })
             .then(response => {
               if (response.ok) {
-                setAvatarUrl(publicUrl.publicUrl);
+                setAvatarUrl(data.publicUrl);
                 // Cache the URL in session storage
-                sessionStorage.setItem(cacheKey, publicUrl.publicUrl);
+                sessionStorage.setItem(cacheKey, data.publicUrl);
               } else {
                 sessionStorage.setItem(cacheKey, "null");
               }
