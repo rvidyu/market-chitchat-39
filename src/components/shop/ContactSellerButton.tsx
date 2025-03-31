@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth";
@@ -66,10 +65,7 @@ const ContactSellerButton = ({ product, seller, variant = "button" }: ContactSel
         throw error;
       }
       
-      toast({
-        title: "Message sent",
-        description: `Your message about "${product.name}" has been sent to ${seller.name}.`,
-      });
+      // Removed success toast notification
       
       // Navigate to chat
       navigate(`/chat/${seller.id}/${product.id}`);

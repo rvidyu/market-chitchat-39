@@ -40,11 +40,7 @@ export const useConversationManagement = (
       // Invalidate conversations query to refresh data
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       
-      // Show success toast
-      toast({
-        title: "Message sent",
-        description: "Your message has been sent successfully.",
-      });
+      // Removed the success toast notification
     },
     onError: (error) => {
       toast({

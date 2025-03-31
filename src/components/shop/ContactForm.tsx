@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
@@ -63,10 +62,7 @@ const ContactForm = ({ seller }: ContactFormProps) => {
         throw error;
       }
       
-      toast({
-        title: "Message sent",
-        description: `Your message has been sent to ${seller.name}.`,
-      });
+      // Removed success toast notification
       
       // Automatically redirect to chat
       navigate(`/chat/${seller.id}`);
