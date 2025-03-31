@@ -55,7 +55,7 @@ interface SupabaseProfile {
   role?: string;
   created_at?: string; 
   updated_at?: string;
-  shop_description?: string; // Updated to match the database column
+  shop_description: string; // Updated to match the database column - making it required
 }
 
 // Function to fetch real sellers from Supabase
@@ -134,7 +134,7 @@ export const getSellerById = async (id: string): Promise<SellerData | null> => {
   }
 };
 
-// Add a column to the profiles table for shop_description
+// Update shop description
 export const updateShopDescription = async (id: string, description: string): Promise<boolean> => {
   try {
     const { error } = await supabase
