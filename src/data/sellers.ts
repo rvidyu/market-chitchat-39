@@ -55,7 +55,7 @@ interface SupabaseProfile {
   role?: string;
   created_at?: string; 
   updated_at?: string;
-  shop_description?: string; // Added this to match what we expect from the DB
+  shop_description?: string; // Updated to match the database column
 }
 
 // Function to fetch real sellers from Supabase
