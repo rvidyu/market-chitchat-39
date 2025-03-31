@@ -52,6 +52,13 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   // Dynamic rendering for optimal performance
   const renderMessageContent = () => (
     <>
+      {/* Display full sender name at the top of the message bubble if not current user */}
+      {!isCurrentUser && (
+        <div className="mb-1 text-sm font-medium text-messaging-primary">
+          {isLoading ? "User" : senderName}
+        </div>
+      )}
+      
       {/* Product Card (if any) */}
       {message.product && (
         <ProductMessageCard product={message.product} />
@@ -107,19 +114,27 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       </Avatar>
       
       <div className="flex flex-col max-w-[80%]">
-        <div className="flex items-center mb-1">
-          {/* Show sender name and timestamp */}
-          <span className="text-xs font-medium mr-2">
-            {isLoading ? "Loading..." : senderName}
-          </span>
-          <span className="text-xs text-messaging-muted">
-            {formatTimestamp(message.timestamp)}
-          </span>
-        </div>
+        {/* This section is now removed since we're displaying the name inside the message bubble */}
+        {isCurrentUser && (
+          <div className="flex items-center mb-1 justify-end">
+            <span className="text-xs text-messaging-muted">
+              {formatTimestamp(message.timestamp)}
+            </span>
+          </div>
+        )}
         
         <div>
           {renderMessageContent()}
         </div>
+        
+        {/* Timestamp for non-current user messages */}
+        {!isCurrentUser && (
+          <div className="flex items-center mt-1">
+            <span className="text-xs text-messaging-muted">
+              {formatTimestamp(message.timestamp)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
