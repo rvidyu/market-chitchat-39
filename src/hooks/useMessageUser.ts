@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,7 +9,8 @@ interface MessageUserData {
 
 // Global cache for user profiles to reduce redundant database queries
 const userProfileCache: Record<string, { name: string; timestamp: number }> = {};
-const CACHE_EXPIRY = 30 * 60 * 1000; // 30 minutes cache expiry
+// Increase cache expiry to 1 hour for better performance
+const CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour cache expiry (changed from 30 minutes)
 
 export const useMessageUser = (senderId: string) => {
   const [userData, setUserData] = useState<MessageUserData>({
@@ -65,7 +67,7 @@ export const useMessageUser = (senderId: string) => {
           if (isMounted) {
             setUserData({
               isCurrentUser,
-              senderName: cachedProfile.name || `${senderId.substring(0, 5)}`
+              senderName: cachedProfile.name || `User-${senderId.substring(0, 5)}`
             });
             setIsLoading(false);
           }
@@ -83,7 +85,7 @@ export const useMessageUser = (senderId: string) => {
         
         if (profileError) {
           console.error("Error fetching profile:", profileError);
-          const fallbackName = senderId.substring(0, 5);
+          const fallbackName = `User-${senderId.substring(0, 5)}`;
           userProfileCache[senderId] = {
             name: fallbackName,
             timestamp: now
@@ -105,7 +107,7 @@ export const useMessageUser = (senderId: string) => {
           });
         } else {
           // Fallback for when profile doesn't exist or name is null
-          const fallbackName = senderId.substring(0, 5);
+          const fallbackName = `User-${senderId.substring(0, 5)}`;
           
           // Cache the fallback name too to prevent repeated lookups
           userProfileCache[senderId] = {
@@ -124,7 +126,7 @@ export const useMessageUser = (senderId: string) => {
           setError(error instanceof Error ? error : new Error(String(error)));
           setUserData({
             isCurrentUser: false,
-            senderName: senderId.substring(0, 5)
+            senderName: `User-${senderId.substring(0, 5)}`
           });
         }
       } finally {
