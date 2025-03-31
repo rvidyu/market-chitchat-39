@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SellerStats {
@@ -15,36 +16,6 @@ export interface SellerData {
   shopDescription: string;
   stats: SellerStats;
 }
-
-// Mock seller data for fallback and testing
-export const MOCK_SELLERS: Record<string, SellerData> = {
-  "seller-1": {
-    id: "seller-1",
-    name: "Handcrafted Haven",
-    role: "seller",
-    email: "haven@example.com",
-    shopDescription: "Beautiful handmade crafts and unique gifts for every occasion.",
-    stats: {
-      itemsSold: 124,
-      rating: 4.8,
-      reviews: 48,
-      products: 25
-    }
-  },
-  "seller-2": {
-    id: "seller-2",
-    name: "Vintage Vibes",
-    role: "seller",
-    email: "vintage@example.com",
-    shopDescription: "Curated collection of authentic vintage items from the 50s through the 90s.",
-    stats: {
-      itemsSold: 89,
-      rating: 4.6,
-      reviews: 31,
-      products: 18
-    }
-  }
-};
 
 // Define the shape of the Supabase profile data
 interface SupabaseProfile {
@@ -68,14 +39,13 @@ export const fetchSellers = async (): Promise<SellerData[]> => {
     
     if (error) {
       console.error("Error fetching sellers:", error);
-      // Return mock data as fallback if query fails
-      return Object.values(MOCK_SELLERS);
+      return [];
     }
     
-    // If no sellers found in database, use mock data
+    // If no sellers found in database, return empty array
     if (!data || data.length === 0) {
-      console.log("No sellers found in database, using mock data");
-      return Object.values(MOCK_SELLERS);
+      console.log("No sellers found in database");
+      return [];
     }
     
     // Transform the data to match our SellerData interface
@@ -94,20 +64,14 @@ export const fetchSellers = async (): Promise<SellerData[]> => {
     }));
   } catch (error) {
     console.error("Error fetching sellers:", error);
-    // Return mock data as fallback
-    return Object.values(MOCK_SELLERS);
+    return [];
   }
 };
 
 // Get a seller by ID
 export const getSellerById = async (id: string): Promise<SellerData | null> => {
   try {
-    // Check if we have a mock seller first (for testing)
-    if (MOCK_SELLERS[id]) {
-      return MOCK_SELLERS[id];
-    }
-    
-    // Otherwise query Supabase
+    // Query Supabase
     const { data, error } = await supabase
       .from('profiles')
       .select('*')

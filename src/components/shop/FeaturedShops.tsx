@@ -13,7 +13,7 @@ const FeaturedShops = () => {
       setIsLoading(true);
       try {
         console.log("FeaturedShops: Fetching sellers...");
-        // Fetch sellers from Supabase or fallback to mock data
+        // Fetch sellers from Supabase 
         const sellerData = await fetchSellers();
         console.log("FeaturedShops: Sellers fetched:", sellerData);
         setSellers(sellerData);
