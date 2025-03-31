@@ -4,7 +4,6 @@ import { SellerData, getSellerById } from "@/data/sellers";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, MessageSquare } from "lucide-react";
-import ProductMessageStarter from "@/components/messaging/ProductMessageStarter";
 import { useNavigate } from "react-router-dom";
 
 interface ProductCardProps {
@@ -65,14 +64,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </Button>
           )}
         </div>
-        
-        {seller && (
-          <ProductMessageStarter 
-            product={product} 
-            seller={seller} 
-            variant="inline" 
-          />
-        )}
       </CardFooter>
     </Card>
   );
