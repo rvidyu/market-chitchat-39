@@ -24,18 +24,49 @@ interface ConversationViewProps {
 export default function ConversationView({ conversation, onSendMessage, onReportSpam }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [otherUserName, setOtherUserName] = useState<string>("User");
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   
-  // Get current user ID
+  // Get current user ID and other participant's info
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setCurrentUserId(data.user.id);
+    const fetchData = async () => {
+      setIsLoadingProfile(true);
+      try {
+        // Get current user ID
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData.user) {
+          setCurrentUserId(userData.user.id);
+          
+          // Find the other participant
+          const otherParticipantId = conversation.participants.find(
+            p => p.id !== userData.user.id
+          )?.id;
+          
+          if (otherParticipantId) {
+            // Fetch their profile
+            const { data: profileData, error } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', otherParticipantId)
+              .single();
+              
+            if (error) {
+              console.error("Error fetching other user profile:", error);
+              setOtherUserName(`User ${otherParticipantId.substring(0, 8)}`);
+            } else if (profileData) {
+              setOtherUserName(profileData.name || `User ${otherParticipantId.substring(0, 4)}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      } finally {
+        setIsLoadingProfile(false);
       }
     };
     
-    fetchUser();
-  }, []);
+    fetchData();
+  }, [conversation.participants]);
   
   // Find the other participant (not the current user)
   const otherParticipant = conversation.participants.find(
@@ -53,6 +84,16 @@ export default function ConversationView({ conversation, onSendMessage, onReport
     }
   };
   
+  // Generate initials for avatar fallback
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name.split(" ")
+      .map(part => part[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
+  };
+  
   if (!otherParticipant) return null;
   
   return (
@@ -61,13 +102,15 @@ export default function ConversationView({ conversation, onSendMessage, onReport
       <div className="flex items-center justify-between p-4 border-b bg-white">
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name} />
-            <AvatarFallback>
-              {otherParticipant.name.split(" ").map((n) => n[0]).join("")}
+            <AvatarImage src={otherParticipant.avatar} alt={otherUserName} />
+            <AvatarFallback className="bg-purple-100 text-purple-500">
+              {getInitials(otherUserName)}
             </AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="font-semibold">{otherParticipant.name}</h3>
+            <h3 className="font-semibold">
+              {isLoadingProfile ? "Loading..." : otherUserName}
+            </h3>
             <p className="text-sm text-messaging-muted">
               {otherParticipant.isOnline ? "Online" : "Offline"}
             </p>

@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Conversation, User } from "@/data/types";
 import { formatTimestamp } from "@/data/messageUtils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,27 +25,72 @@ export default function ConversationItem({
   onMarkNotSpam 
 }: ConversationItemProps) {
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [otherUserName, setOtherUserName] = useState<string>("User");
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   
-  useState(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setCurrentUserId(data.user.id);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setIsLoadingProfile(true);
+      try {
+        // Get current user ID
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData.user) {
+          setCurrentUserId(userData.user.id);
+          
+          // Find the other participant
+          const otherParticipantId = conversation.participants.find(
+            p => p.id !== userData.user.id
+          )?.id;
+          
+          if (otherParticipantId) {
+            // Fetch their profile
+            const { data: profileData, error } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', otherParticipantId)
+              .single();
+              
+            if (error) {
+              console.error("Error fetching other user profile:", error);
+              setOtherUserName(`User ${otherParticipantId.substring(0, 8)}`);
+            } else if (profileData) {
+              setOtherUserName(profileData.name || `User ${otherParticipantId.substring(0, 4)}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+      } finally {
+        setIsLoadingProfile(false);
       }
-    });
-  });
+    };
+    
+    fetchUserData();
+  }, [conversation.participants]);
   
+  // Find the other participant
   const otherParticipant = conversation.participants.find(
     (participant) => participant.id !== currentUserId
   ) as User;
   
   const lastMessage = conversation.messages[conversation.messages.length - 1];
-  const isLastMessageFromCurrentUser = lastMessage.senderId === currentUserId;
+  const isLastMessageFromCurrentUser = lastMessage?.senderId === currentUserId;
   
   const handleMarkNotSpam = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onMarkNotSpam) {
       onMarkNotSpam(conversation.id);
     }
+  };
+  
+  // Generate initials for avatar fallback
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name.split(" ")
+      .map(part => part[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
   };
   
   return (
@@ -63,12 +109,12 @@ export default function ConversationItem({
           "h-12 w-12 ring-2 ring-offset-2",
           isActive ? "ring-messaging-primary ring-opacity-50" : "ring-transparent"
         )}>
-          <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name} />
+          <AvatarImage src={otherParticipant?.avatar} alt={otherUserName} />
           <AvatarFallback className="bg-messaging-secondary text-messaging-primary font-medium">
-            {otherParticipant.name.split(" ").map((n) => n[0]).join("")}
+            {getInitials(otherUserName)}
           </AvatarFallback>
         </Avatar>
-        {otherParticipant.isOnline && (
+        {otherParticipant?.isOnline && (
           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>
         )}
       </div>
@@ -79,7 +125,7 @@ export default function ConversationItem({
             "font-medium truncate",
             isActive ? "text-messaging-primary" : "text-messaging-text"
           )}>
-            {otherParticipant.name}
+            {isLoadingProfile ? "Loading..." : otherUserName}
             {isSpam && (
               <Badge variant="destructive" className="ml-2 bg-red-500">
                 <Flag className="h-3 w-3 mr-1" /> Spam
@@ -87,7 +133,7 @@ export default function ConversationItem({
             )}
           </h3>
           <span className="text-xs text-messaging-muted whitespace-nowrap ml-2">
-            {formatTimestamp(lastMessage.timestamp)}
+            {lastMessage && formatTimestamp(lastMessage.timestamp)}
           </span>
         </div>
         
@@ -99,7 +145,7 @@ export default function ConversationItem({
             {isLastMessageFromCurrentUser ? (
               <span className="text-messaging-muted">You: </span>
             ) : null}
-            {lastMessage.text}
+            {lastMessage?.text}
           </p>
           
           {conversation.unreadCount > 0 && !isLastMessageFromCurrentUser && (

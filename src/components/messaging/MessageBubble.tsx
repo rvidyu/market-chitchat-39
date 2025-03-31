@@ -12,27 +12,42 @@ interface MessageBubbleProps {
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
   const [currentUserId, setCurrentUserId] = useState<string>("");
-  const [senderName, setSenderName] = useState<string>("");
+  const [senderName, setSenderName] = useState<string>("User");
   const [senderAvatar, setSenderAvatar] = useState<string>("");
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   
   // Get current user ID and sender info
   useEffect(() => {
     const fetchUserData = async () => {
-      // Get current user
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        setCurrentUserId(userData.user.id);
-      }
-      
-      // Get sender's profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', message.senderId)
-        .single();
-      
-      if (profileData) {
-        setSenderName(profileData.name || "Unknown User");
+      setIsLoadingProfile(true);
+      try {
+        // Get current user
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData.user) {
+          setCurrentUserId(userData.user.id);
+        }
+        
+        // Get sender's profile
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('name, id')
+          .eq('id', message.senderId)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching profile:", error);
+          // Set a fallback name based on the first part of the ID
+          setSenderName(message.senderId.substring(0, 8) || "User");
+        } else if (profileData) {
+          setSenderName(profileData.name || `User ${profileData.id.substring(0, 4)}`);
+        } else {
+          setSenderName(`User ${message.senderId.substring(0, 8)}`);
+        }
+      } catch (err) {
+        console.error("Error in fetchUserData:", err);
+        setSenderName(`User ${message.senderId.substring(0, 8)}`);
+      } finally {
+        setIsLoadingProfile(false);
       }
     };
     
@@ -42,6 +57,16 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   const isCurrentUser = message.senderId === currentUserId;
   const hasContent = message.text.trim().length > 0;
   const hasImages = message.images && message.images.length > 0;
+
+  // Generate initials for avatar fallback
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name.split(" ")
+      .map(part => part[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
+  };
   
   return (
     <div className={cn(
@@ -51,13 +76,17 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       {!isCurrentUser && (
         <Avatar className="h-8 w-8">
           <AvatarImage src={senderAvatar} alt={senderName} />
-          <AvatarFallback>{senderName.split(" ").map((n) => n?.[0] || "").join("")}</AvatarFallback>
+          <AvatarFallback className="bg-purple-100 text-purple-500">
+            {getInitials(senderName)}
+          </AvatarFallback>
         </Avatar>
       )}
       
       <div className="max-w-[70%]">
         {!isCurrentUser && (
-          <div className="text-xs text-messaging-muted ml-1 mb-1">{senderName}</div>
+          <div className="text-xs text-messaging-muted ml-1 mb-1">
+            {isLoadingProfile ? "Loading..." : senderName}
+          </div>
         )}
         
         <div className={cn(
