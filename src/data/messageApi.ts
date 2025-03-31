@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { Message, Conversation, Product } from './messages';
+import { Message, Conversation, Product } from './types';
 
 // Fetch conversations for the current user
 export const fetchConversations = async (): Promise<Conversation[]> => {
