@@ -54,14 +54,9 @@ const Chat = () => {
 
   const handleMarkNotSpam = () => {
     toast({
-      title: (
-        <div className="flex items-center font-medium">
-          <Check className="h-4 w-4 mr-2 text-green-500" />
-          Marked as not spam
-        </div>
-      ),
+      title: "Marked as not spam",
       description: "The conversation has been moved back to your inbox.",
-      variant: "default",
+      variant: "success",
       className: "bg-white border-green-200",
     });
   };
