@@ -96,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           async (payload) => {
             console.log('Profile change detected:', payload);
             // If the current user's profile changed, update the user state
-            if (session?.user && payload.new && payload.new.id === session.user.id) {
+            if (session?.user && payload.new && typeof payload.new === 'object' && 'id' in payload.new && payload.new.id === session.user.id) {
               const updatedProfile = payload.new;
               setUser(formatUserData(session.user.id, session.user.email, updatedProfile));
             }
