@@ -30,20 +30,12 @@ export const useRegister = ({ setUser, setError, setLoading, toast, navigate }: 
       });
       
       if (error) {
-        // Mock registration for demo
-        const mockUser: User = {
-          id: `user-${Date.now()}`,
-          name,
-          email,
-          role
-        };
-        setUser(mockUser);
-        localStorage.setItem('user', JSON.stringify(mockUser));
+        setError(error.message);
         toast({
-          title: "Registration successful",
-          description: "Your account has been created successfully.",
+          title: "Registration failed",
+          description: error.message,
+          variant: "destructive",
         });
-        navigate('/');
         return;
       }
       

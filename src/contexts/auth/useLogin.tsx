@@ -24,45 +24,12 @@ export const useLogin = ({ setUser, setError, setLoading, toast, navigate }: Use
       });
       
       if (error) {
-        // Handle demo accounts
-        if (email === 'buyer@example.com' && password === 'password') {
-          const mockUser: User = {
-            id: 'buyer-1',
-            name: 'Jane Smith',
-            email: 'buyer@example.com',
-            role: 'buyer'
-          };
-          setUser(mockUser);
-          localStorage.setItem('user', JSON.stringify(mockUser));
-          navigate('/');
-          toast({
-            title: "Login successful",
-            description: `Welcome back, ${mockUser.name}!`,
-          });
-          return;
-        } else if (email === 'seller@example.com' && password === 'password') {
-          const mockUser: User = {
-            id: 'seller-1',
-            name: 'Crafty Creations',
-            email: 'seller@example.com',
-            role: 'seller'
-          };
-          setUser(mockUser);
-          localStorage.setItem('user', JSON.stringify(mockUser));
-          navigate('/');
-          toast({
-            title: "Login successful",
-            description: `Welcome back, ${mockUser.name}!`,
-          });
-          return;
-        } else {
-          setError(error.message);
-          toast({
-            title: "Login failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+        setError(error.message);
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
         return;
       }
       
