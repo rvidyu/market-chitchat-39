@@ -32,10 +32,7 @@ export default function MessageContent({
           ? "bg-messaging-primary text-white rounded-tr-none"
           : "bg-gray-100 text-messaging-text rounded-tl-none"
       )}>
-        {/* Show full name for non-current user messages */}
-        {!isCurrentUser && !isLoading && (
-          <div className="font-medium text-sm mb-1">{senderName}</div>
-        )}
+        {/* Removed the sender name display that was here */}
         <p className="whitespace-pre-wrap">{message.text}</p>
       </div>
       
