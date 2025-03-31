@@ -65,11 +65,14 @@ const SellerShop = () => {
     const fetchData = async () => {
       setIsLoading(true);
       
-      if (isOwnShop) {
-        // If it's the user's own shop
-        if (user?.role !== "seller") {
-          setIsLoading(false);
-          return; // No shop data if not a seller
+      // Choose which seller ID to use
+      const targetSellerId = sellerId || (user?.id || "");
+      
+      if (isOwnShop && user) {
+        // If it's the user's own shop and they're logged in
+        if (user.role !== "seller") {
+          navigate("/"); // Redirect non-sellers trying to view their own shop
+          return;
         }
         
         // Use the logged-in seller's data
@@ -97,9 +100,10 @@ const SellerShop = () => {
           
         setProducts(allProducts);
       } else {
-        // Viewing another seller's shop
+        // Viewing another seller's shop or public view
         // Fetch the seller data based on the sellerId
-        const sellerData = MOCK_SELLERS[sellerId || ""] || null;
+        const sellerData = MOCK_SELLERS[targetSellerId] || null;
+        
         if (sellerData) {
           setShopData(sellerData);
           
@@ -112,9 +116,30 @@ const SellerShop = () => {
             : getProductsBySellerId(sellerData.id);
             
           setProducts(allProducts);
+        } else if (targetSellerId) {
+          console.error(`Seller with ID ${targetSellerId} not found`);
+          // Try to find any shop to display
+          const availableSellers = Object.values(MOCK_SELLERS);
+          if (availableSellers.length > 0) {
+            const defaultSeller = availableSellers[0];
+            setShopData(defaultSeller);
+            
+            // Try to get products from Supabase first
+            const supabaseProducts = await loadSupabaseProducts(defaultSeller.id);
+            
+            // If no Supabase products, fall back to mock data
+            const allProducts = supabaseProducts.length > 0 
+              ? supabaseProducts 
+              : getProductsBySellerId(defaultSeller.id);
+              
+            setProducts(allProducts);
+          } else {
+            // No sellers available at all
+            navigate("/");
+            return;
+          }
         } else {
-          console.error(`Seller with ID ${sellerId} not found`);
-          // Set to the default seller if not found
+          // No sellerId and not logged in - show a default shop
           const defaultSeller = MOCK_SELLERS["seller-1"];
           setShopData(defaultSeller);
           
@@ -134,7 +159,7 @@ const SellerShop = () => {
     };
 
     fetchData();
-  }, [sellerId, user, isOwnShop]);
+  }, [sellerId, user, isOwnShop, navigate]);
 
   // Handler to update shop description
   const handleUpdateDescription = (newDescription: string) => {
@@ -168,9 +193,21 @@ const SellerShop = () => {
       description: `${newProduct.name} has been added to your shop.`,
     });
   };
-  
-  // Only sellers should have a shop page when viewing their own shop
-  if (isOwnShop && user?.role !== "seller") {
+
+  // If still loading shop data
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto p-4 flex justify-center items-center min-h-[300px]">
+          <p>Loading shop data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If we have no shop data, something went wrong
+  if (!shopData) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -179,26 +216,14 @@ const SellerShop = () => {
             <CardContent className="pt-6">
               <div className="flex flex-col items-center justify-center min-h-[300px] text-center">
                 <Store className="h-16 w-16 text-gray-400 mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Seller Shop Not Found</h2>
+                <h2 className="text-2xl font-bold mb-2">Shop Not Found</h2>
                 <p className="text-gray-500 mb-4">
-                  You need to be logged in as a seller to view your shop profile.
+                  We couldn't find the shop you're looking for.
                 </p>
                 <Button onClick={() => navigate("/")}>Return Home</Button>
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // If still loading shop data
-  if (!shopData) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto p-4 flex justify-center items-center min-h-[300px]">
-          <p>Loading shop data...</p>
         </div>
       </div>
     );
@@ -238,7 +263,7 @@ const SellerShop = () => {
                 <Package className="mr-2 h-6 w-6" /> 
                 {isOwnShop ? "Your Products" : `${shopData.name}'s Products`}
               </h2>
-              {isOwnShop && (
+              {isOwnShop && user?.role === "seller" && (
                 <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
                   <DialogTrigger asChild>
                     <Button 
