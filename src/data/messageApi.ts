@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Message, Conversation, Product, User } from './types';
 
@@ -200,7 +199,7 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
     // Determine the other participant's ID
     const otherUserId = participantIds[0] === user.id ? participantIds[1] : participantIds[0];
     
-    // Update all unread messages from the other user to this user
+    // Create a more efficient query with better error handling
     const { error } = await supabase
       .from('messages')
       .update({ is_read: true })

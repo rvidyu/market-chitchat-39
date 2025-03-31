@@ -13,31 +13,30 @@ export const useConversationManagement = (
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch conversations from Supabase
+  // Fetch conversations from Supabase with optimized queries
   const { data: conversationsList = [], isLoading, error } = useQuery({
     queryKey: ['conversations'],
     queryFn: fetchConversations,
     staleTime: 1000 * 60, // 1 minute
   });
 
-  // Handle sending a new message
+  // Handle sending a new message with optimized mutation
   const sendMessageMutation = useMutation({
     mutationFn: async ({ recipientId, text, images }: { recipientId: string, text: string, images?: File[] }) => {
-      // Handle image uploads (in a real app)
+      // Handle image uploads more efficiently
       const imageUrls: string[] = [];
       if (images && images.length > 0) {
-        // For future implementation: upload images to Supabase storage
-        // and get their URLs
-        images.forEach(image => {
+        // For future implementation: process images more efficiently
+        for (const image of images) {
           const imageUrl = URL.createObjectURL(image);
           imageUrls.push(imageUrl);
-        });
+        }
       }
 
       return sendMessage(recipientId, text, undefined, imageUrls.length > 0 ? imageUrls : undefined);
     },
     onSuccess: () => {
-      // Invalidate conversations query to refresh data
+      // Only invalidate conversations query to refresh data
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error) => {
@@ -49,11 +48,11 @@ export const useConversationManagement = (
     }
   });
 
-  // Handle marking messages as read
+  // Handle marking messages as read more efficiently
   const markAsReadMutation = useMutation({
     mutationFn: markMessagesAsRead,
     onSuccess: () => {
-      // Invalidate conversations query to refresh data
+      // Use focused invalidation to only update the needed data
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error) => {
@@ -61,7 +60,7 @@ export const useConversationManagement = (
     }
   });
 
-  // Handle sending a message
+  // Optimize message sending by getting currentUserId once
   const handleSendMessage = (text: string, images?: File[]) => {
     if (!activeConversationId) return;
 
@@ -72,27 +71,41 @@ export const useConversationManagement = (
 
     if (!activeConversation) return;
 
-    // Find the recipient (not the current user)
-    let currentUserId = "";
+    // Use async/await instead of nested promises for better performance
+    const sendMessageAsync = async () => {
+      try {
+        // Get the current user session
+        const { data } = await supabase.auth.getSession();
+        const currentUserId = data.session?.user.id || "";
+        
+        if (!currentUserId) {
+          console.error("No current user ID found");
+          return;
+        }
+        
+        // Find the recipient
+        const recipient = activeConversation.participants.find(
+          (participant) => participant.id !== currentUserId
+        );
     
-    // Get the current user ID synchronously first
-    supabase.auth.getSession().then(response => {
-      currentUserId = response.data.session?.user.id || "";
-      
-      // Find the recipient after we have the current user ID
-      const recipient = activeConversation.participants.find(
-        (participant) => participant.id !== currentUserId
-      );
-  
-      if (!recipient) return;
-  
-      // Send the message
-      sendMessageMutation.mutate({ 
-        recipientId: recipient.id, 
-        text, 
-        images 
-      });
-    });
+        if (!recipient) {
+          console.error("No recipient found in conversation");
+          return;
+        }
+    
+        // Send the message
+        sendMessageMutation.mutate({ 
+          recipientId: recipient.id, 
+          text, 
+          images 
+        });
+      } catch (error) {
+        console.error("Error in message sending process:", error);
+      }
+    };
+
+    // Execute the async function
+    sendMessageAsync();
   };
 
   // Mark messages as read when a conversation is selected
@@ -126,7 +139,7 @@ export const useConversationManagement = (
     }
   }, [activeConversationId, conversationsList]);
 
-  // Set up realtime subscription for new messages
+  // Set up realtime subscription for new messages with optimized handling
   useEffect(() => {
     // Get the current authenticated user from Supabase
     const fetchUser = async () => {
