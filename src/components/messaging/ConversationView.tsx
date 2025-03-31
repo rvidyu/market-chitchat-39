@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from "react";
 import { Conversation } from "@/data/types";
 import MessageBubble from "./MessageBubble";
@@ -54,6 +53,7 @@ export default function ConversationView({ conversation, onSendMessage, onReport
               console.error("Error fetching other user profile:", error);
               setOtherUserName(`User ${otherParticipantId.substring(0, 8)}`);
             } else if (profileData) {
+              // Use full name from profile
               setOtherUserName(profileData.name || `User ${otherParticipantId.substring(0, 4)}`);
             }
           }

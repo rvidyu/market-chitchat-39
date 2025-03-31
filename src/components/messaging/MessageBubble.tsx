@@ -1,4 +1,3 @@
-
 import { Message } from "@/data/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MessageImageAttachment from "./MessageImageAttachment";
@@ -37,9 +36,10 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         if (error) {
           console.error("Error fetching profile:", error);
           // Set a fallback name based on the first part of the ID
-          setSenderName(message.senderId.substring(0, 8) || "User");
+          setSenderName(`User ${message.senderId.substring(0, 8)}` || "User");
         } else if (profileData) {
-          setSenderName(profileData.name || `User ${profileData.id.substring(0, 4)}`);
+          // Use the full name from profile instead of the shortened ID
+          setSenderName(profileData.name || `User ${message.senderId.substring(0, 8)}`);
         } else {
           setSenderName(`User ${message.senderId.substring(0, 8)}`);
         }
