@@ -26,7 +26,7 @@ const AddProductForm = ({ sellerId, onSuccess, onCancel }: AddProductFormProps) 
         <ProductCategoryField control={form.control} />
         <ProductImageField control={form.control} />
 
-        <FormErrorDisplay errors={form.formState.errors} />
+        <FormErrorDisplay errors={form.formState.errors} className="mt-4" />
 
         <div className="flex justify-end space-x-2 pt-2">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
