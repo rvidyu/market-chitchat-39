@@ -31,6 +31,8 @@ interface SupabaseProfile {
 // Function to fetch real sellers from Supabase
 export const fetchSellers = async (): Promise<SellerData[]> => {
   try {
+    console.log("Fetching sellers from Supabase...");
+    
     // Query profiles with role=seller
     const { data, error } = await supabase
       .from('profiles')
@@ -42,6 +44,9 @@ export const fetchSellers = async (): Promise<SellerData[]> => {
       return [];
     }
     
+    // Log the actual data returned to help with debugging
+    console.log("Raw seller data from database:", data);
+    
     // If no sellers found in database, return empty array
     if (!data || data.length === 0) {
       console.log("No sellers found in database");
@@ -49,10 +54,10 @@ export const fetchSellers = async (): Promise<SellerData[]> => {
     }
     
     // Transform the data to match our SellerData interface
-    return data.map((seller: SupabaseProfile) => ({
+    const sellers = data.map((seller: SupabaseProfile) => ({
       id: seller.id,
       name: seller.name || "Shop Owner",
-      role: "seller",
+      role: "seller" as const,
       email: seller.email || "",
       shopDescription: seller.shop_description || "Welcome to my handmade and vintage shop!",
       stats: {
@@ -62,8 +67,11 @@ export const fetchSellers = async (): Promise<SellerData[]> => {
         products: Math.floor(Math.random() * 30) + 1
       }
     }));
+    
+    console.log("Transformed seller data:", sellers);
+    return sellers;
   } catch (error) {
-    console.error("Error fetching sellers:", error);
+    console.error("Exception fetching sellers:", error);
     return [];
   }
 };

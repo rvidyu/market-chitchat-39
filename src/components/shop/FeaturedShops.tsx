@@ -7,10 +7,12 @@ import { Award, TrendingUp, Store } from "lucide-react";
 const FeaturedShops = () => {
   const [sellers, setSellers] = useState<SellerData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadSellers = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         console.log("FeaturedShops: Fetching sellers...");
         // Fetch sellers from Supabase 
@@ -19,6 +21,7 @@ const FeaturedShops = () => {
         setSellers(sellerData);
       } catch (error) {
         console.error("Failed to load sellers:", error);
+        setError("Failed to load sellers");
         setSellers([]);
       } finally {
         setIsLoading(false);
@@ -39,6 +42,26 @@ const FeaturedShops = () => {
           {[1, 2, 3].map((i) => (
             <div key={i} className="bg-gray-100 animate-pulse rounded-lg h-64"></div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full">
+        <div className="flex items-center gap-2 mb-6">
+          <Award className="h-6 w-6 text-messaging-primary" />
+          <h2 className="text-2xl font-bold text-messaging-primary">Featured Sellers</h2>
+        </div>
+        <div className="p-8 text-center bg-gray-50 rounded-lg border border-dashed border-gray-300">
+          <p className="text-lg font-medium text-red-600">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-messaging-primary text-white rounded-md hover:bg-messaging-primary/90"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );

@@ -14,15 +14,17 @@ const BuyerDashboard = () => {
   const { user } = useAuth();
   const [sellers, setSellers] = useState<SellerData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadSellers = async () => {
       setIsLoading(true);
+      setLoadError(null);
       try {
-        console.log("Fetching sellers...");
+        console.log("BuyerDashboard: Fetching sellers...");
         const sellerData = await fetchSellers();
-        console.log("Sellers fetched:", sellerData);
+        console.log("BuyerDashboard: Sellers fetched:", sellerData);
         setSellers(sellerData);
         
         if (sellerData.length === 0) {
@@ -33,6 +35,7 @@ const BuyerDashboard = () => {
         }
       } catch (error) {
         console.error("Failed to load sellers:", error);
+        setLoadError("Failed to load sellers. Please try again later.");
         toast({
           title: "Error",
           description: "Failed to load sellers. Please try again later.",
@@ -67,6 +70,11 @@ const BuyerDashboard = () => {
               <Card key={i} className="h-64 animate-pulse bg-gray-100" />
             ))}
           </div>
+        ) : loadError ? (
+          <CardContent className="text-center py-12">
+            <p className="text-xl font-medium text-red-600 mb-4">{loadError}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </CardContent>
         ) : sellers.length === 0 ? (
           <CardContent className="text-center py-12">
             <Store className="h-16 w-16 mx-auto mb-4 text-gray-400" />
