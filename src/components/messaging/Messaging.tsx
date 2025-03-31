@@ -10,7 +10,7 @@ import { useSpamManagement } from "./hooks/useSpamManagement";
 import { useConversationManagement } from "./hooks/useConversationManagement";
 import MobileMessagingView from "./MobileMessagingView";
 import { useAuth } from "@/contexts/auth";
-import { Conversation } from "@/data/types"; // Import from types.ts instead of messages.ts
+import { Conversation } from "@/data/types"; // Import from types.ts consistently
 
 interface MessagingProps {
   initialConversationId?: string | null;

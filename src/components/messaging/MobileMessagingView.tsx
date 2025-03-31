@@ -1,5 +1,5 @@
 
-import { Conversation } from "@/data/messages";
+import { Conversation } from "@/data/types"; // Updated import
 import MobileHeader from "./MobileHeader";
 import ConversationView from "./ConversationView";
 

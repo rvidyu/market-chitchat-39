@@ -21,7 +21,7 @@ export interface Message {
   isRead: boolean;
   product?: Product;
   images?: string[];
-  conversationId?: string; // Added this field to match messages.ts
+  conversationId: string; // Changed from optional to required
 }
 
 export interface Conversation {

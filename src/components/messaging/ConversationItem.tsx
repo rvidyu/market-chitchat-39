@@ -1,11 +1,12 @@
-
 import { useState } from "react";
-import { Conversation, User, formatTimestamp, currentUser } from "@/data/messages";
+import { Conversation, User } from "@/data/types";
+import { formatTimestamp } from "@/data/messageUtils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Flag, CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -22,14 +23,22 @@ export default function ConversationItem({
   isSpam = false,
   onMarkNotSpam 
 }: ConversationItemProps) {
-  // Find the other participant (not the current user)
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  
+  useState(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setCurrentUserId(data.user.id);
+      }
+    });
+  });
+  
   const otherParticipant = conversation.participants.find(
-    (participant) => participant.id !== currentUser.id
+    (participant) => participant.id !== currentUserId
   ) as User;
   
-  // Get the last message in the conversation
   const lastMessage = conversation.messages[conversation.messages.length - 1];
-  const isLastMessageFromCurrentUser = lastMessage.senderId === currentUser.id;
+  const isLastMessageFromCurrentUser = lastMessage.senderId === currentUserId;
   
   const handleMarkNotSpam = (e: React.MouseEvent) => {
     e.stopPropagation();

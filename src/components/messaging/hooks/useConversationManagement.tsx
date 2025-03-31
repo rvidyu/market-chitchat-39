@@ -76,18 +76,25 @@ export const useConversationManagement = (
     if (!activeConversation) return;
 
     // Find the recipient (not the current user)
-    const currentUserId = supabase.auth.getSession().then(response => response.data.session?.user.id);
-    const recipient = activeConversation.participants.find(
-      (participant) => participant.id !== currentUserId
-    );
-
-    if (!recipient) return;
-
-    // Send the message
-    sendMessageMutation.mutate({ 
-      recipientId: recipient.id, 
-      text, 
-      images 
+    let currentUserId = "";
+    
+    // Get the current user ID synchronously first
+    supabase.auth.getSession().then(response => {
+      currentUserId = response.data.session?.user.id || "";
+      
+      // Find the recipient after we have the current user ID
+      const recipient = activeConversation.participants.find(
+        (participant) => participant.id !== currentUserId
+      );
+  
+      if (!recipient) return;
+  
+      // Send the message
+      sendMessageMutation.mutate({ 
+        recipientId: recipient.id, 
+        text, 
+        images 
+      });
     });
   };
 
