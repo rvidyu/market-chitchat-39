@@ -2,6 +2,16 @@
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "./types";
 
+// Mock user data function for fallback
+export const getMockUser = (role: 'buyer' | 'seller'): User => {
+  return {
+    id: role === 'buyer' ? 'buyer-1' : 'seller-1',
+    name: role === 'buyer' ? 'Jane Smith' : 'Crafty Creations',
+    email: role === 'buyer' ? 'jane@example.com' : 'crafty@example.com',
+    role: role
+  };
+};
+
 // Fetch user profile from the database
 export const fetchUserProfile = async (userId: string): Promise<User | null> => {
   const { data: profile, error } = await supabase
