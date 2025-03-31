@@ -1,15 +1,28 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Conversation, currentUser } from "@/data/messages";
 import { useToast } from "@/hooks/use-toast";
+import { loadConversations, saveConversations } from "@/data/conversations";
 
 export const useConversationManagement = (
-  initialConversations: Conversation[],
   initialConversationId: string | null = null
 ) => {
-  const [conversationsList, setConversationsList] = useState(initialConversations);
+  const [conversationsList, setConversationsList] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(initialConversationId);
   const { toast } = useToast();
+  
+  // Load conversations from localStorage on initial render
+  useEffect(() => {
+    const savedConversations = loadConversations();
+    setConversationsList(savedConversations);
+  }, []);
+
+  // Save conversations to localStorage whenever they change
+  useEffect(() => {
+    if (conversationsList.length > 0) {
+      saveConversations(conversationsList);
+    }
+  }, [conversationsList]);
 
   // Handle sending a new message
   const handleSendMessage = (text: string, images?: File[]) => {

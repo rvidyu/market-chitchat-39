@@ -7,10 +7,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Store, MessageSquare, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { conversations } from "@/data/messages";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import QuickReplyManager from "@/components/messaging/QuickReplyManager";
 import { Button } from "@/components/ui/button";
+import { Conversation, currentUser } from "@/data/messages";
+import { loadConversations, saveConversations } from "@/data/conversations";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -28,11 +29,57 @@ const Chat = () => {
     if (sellerId && productId && location.state?.initialMessage) {
       console.log("Opening chat with seller:", sellerId, "about product:", productId);
       
-      const existingConversation = conversations.find(conv => 
+      // Load existing conversations
+      const existingConversations = loadConversations();
+      
+      const existingConversation = existingConversations.find(conv => 
         conv.participants.some(p => p.id === sellerId)
       );
       
+      // Create or use an existing conversation
       const conversationId = existingConversation ? existingConversation.id : `new-conv-${Date.now()}`;
+      
+      // If it's a new conversation, create it
+      if (!existingConversation && location.state?.sellerName) {
+        const newConversation: Conversation = {
+          id: conversationId,
+          participants: [
+            currentUser,
+            {
+              id: sellerId,
+              name: location.state.sellerName,
+              avatar: "/placeholder.svg",
+              isOnline: false
+            }
+          ],
+          messages: [],
+          lastActivity: new Date().toISOString(),
+          unreadCount: 0
+        };
+        
+        // Add initial message about the product if provided
+        if (location.state?.initialMessage && !location.state.messageSent) {
+          const productInfo = {
+            id: productId,
+            name: location.state.productName || "Product",
+            image: "/placeholder.svg",
+            price: location.state.productPrice ? `$${location.state.productPrice}` : "Price not available"
+          };
+          
+          newConversation.messages.push({
+            id: `msg-init-${Date.now()}`,
+            senderId: currentUser.id,
+            text: location.state.initialMessage || `Hi, I'm interested in this product.`,
+            timestamp: new Date().toISOString(),
+            isRead: true,
+            product: productInfo
+          });
+        }
+        
+        // Save the new conversation
+        saveConversations([...existingConversations, newConversation]);
+      }
+      
       setActiveConversationId(conversationId);
       
       if (location.state?.initialMessage && !location.state.messageSent) {

@@ -1,6 +1,5 @@
 
 import { useEffect } from "react";
-import { conversations } from "@/data/messages";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ConversationView from "./ConversationView";
 import EmptyState from "./EmptyState";
@@ -34,7 +33,7 @@ export default function Messaging({ initialConversationId = null, onNotSpamMarke
     setActiveConversationId,
     handleSendMessage,
     handleSelectConversation
-  } = useConversationManagement(conversations, initialConversationId);
+  } = useConversationManagement(initialConversationId);
 
   // Update active conversation when initialConversationId changes
   useEffect(() => {
