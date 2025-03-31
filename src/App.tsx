@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import SellerShop from "./pages/SellerShop";
 import Chat from "./pages/Chat";
 import BuyerDashboard from "./pages/BuyerDashboard";
+import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <BuyerDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               } 
             />
