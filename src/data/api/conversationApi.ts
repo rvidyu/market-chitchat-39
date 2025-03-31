@@ -39,7 +39,10 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
       
       if (!conversationsMap.has(conversationId)) {
         // Get partner profile from the joined data
-        const partnerProfile = conv.sender_id === user.id ? conv.recipient : conv.sender;
+        // Fix: Add type checking to handle possible null values
+        const partnerProfile = conv.sender_id === user.id 
+          ? (conv.recipient as { id?: string; name?: string } || {}) 
+          : (conv.sender as { id?: string; name?: string } || {});
         
         // Fetch the latest messages for this conversation in a single query
         const { data: messages } = await supabase
