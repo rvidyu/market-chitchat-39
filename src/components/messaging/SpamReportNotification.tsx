@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Undo, X, AlertTriangle } from "lucide-react";
+import { Undo, X, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface SpamReportNotificationProps {
@@ -36,13 +36,13 @@ const SpamReportNotification = ({ onUndo }: SpamReportNotificationProps) => {
           <div className="flex items-start">
             {/* Icon */}
             <div className="flex-shrink-0 bg-red-100 p-2 rounded-full mr-3">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <ShieldAlert className="h-5 w-5 text-red-500" />
             </div>
             
             {/* Content */}
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900 mb-1">Message reported as spam</h3>
-              <p className="text-sm text-gray-600">This conversation has been moved to your spam folder</p>
+              <p className="text-sm text-gray-600">This conversation has been moved to your spam folder and the user has been blocked</p>
               
               {/* Action buttons */}
               <div className="flex items-center justify-end mt-3 space-x-2">
