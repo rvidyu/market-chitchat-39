@@ -1,5 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { Message, Conversation, Product } from './types';
+import { Message, Conversation, Product, User } from './types';
 
 // Fetch conversations for the current user
 export const fetchConversations = async (): Promise<Conversation[]> => {
@@ -61,10 +62,12 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
             {
               id: user.id,
               name: user.user_metadata?.name || user.email || "You",
+              avatar: "", // Adding required avatar field
             },
             {
               id: partnerId,
               name: partnerProfile?.name || "Unknown User",
+              avatar: "", // Adding required avatar field
             }
           ],
           messages: (messages || []).map(msg => ({
@@ -72,7 +75,7 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
             conversationId,
             senderId: msg.sender_id,
             text: msg.text,
-            timestamp: new Date(msg.timestamp).getTime(),
+            timestamp: msg.timestamp, // Keep as string to match the type
             isRead: msg.is_read,
             ...(msg.product_id && {
               product: {
@@ -85,7 +88,6 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
             ...(msg.images && { images: msg.images })
           })).reverse(),
           unreadCount,
-          // Adding lastActivity as it's required by the Conversation type
           lastActivity: pair.timestamp
         };
         
@@ -158,7 +160,8 @@ export const sendMessage = async (
       conversationId,
       senderId: newMessage.sender_id,
       text: newMessage.text,
-      timestamp: new Date(newMessage.timestamp).getTime(),
+      timestamp: newMessage.timestamp, // Keep as string
+      isRead: newMessage.is_read,
       images: newMessage.images,
       product: product
     };

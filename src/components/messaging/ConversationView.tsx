@@ -1,6 +1,6 @@
 
 import { useRef, useEffect, useState } from "react";
-import { Conversation, currentUser } from "@/data/messages";
+import { Conversation } from "@/data/types";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ConversationViewProps {
   conversation: Conversation;
@@ -22,10 +23,23 @@ interface ConversationViewProps {
 
 export default function ConversationView({ conversation, onSendMessage, onReportSpam }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  
+  // Get current user ID
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
+        setCurrentUserId(data.user.id);
+      }
+    };
+    
+    fetchUser();
+  }, []);
   
   // Find the other participant (not the current user)
   const otherParticipant = conversation.participants.find(
-    (p) => p.id !== currentUser.id
+    (p) => p.id !== currentUserId
   );
   
   useEffect(() => {

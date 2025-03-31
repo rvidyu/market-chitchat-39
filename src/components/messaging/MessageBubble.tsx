@@ -1,19 +1,45 @@
 
-import { Message, User, currentUser, getUserById, formatTimestamp } from "@/data/messages";
+import { Message } from "@/data/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MessageImageAttachment from "./MessageImageAttachment";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MessageBubbleProps {
   message: Message;
 }
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
-  const isCurrentUser = message.senderId === currentUser.id;
-  const sender = isCurrentUser ? currentUser : getUserById(message.senderId);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [senderName, setSenderName] = useState<string>("");
+  const [senderAvatar, setSenderAvatar] = useState<string>("");
   
-  if (!sender) return null;
+  // Get current user ID and sender info
+  useEffect(() => {
+    const fetchUserData = async () => {
+      // Get current user
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        setCurrentUserId(userData.user.id);
+      }
+      
+      // Get sender's profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', message.senderId)
+        .single();
+      
+      if (profileData) {
+        setSenderName(profileData.name || "Unknown User");
+      }
+    };
+    
+    fetchUserData();
+  }, [message.senderId]);
   
+  const isCurrentUser = message.senderId === currentUserId;
   const hasContent = message.text.trim().length > 0;
   const hasImages = message.images && message.images.length > 0;
   
@@ -24,14 +50,14 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     )}>
       {!isCurrentUser && (
         <Avatar className="h-8 w-8">
-          <AvatarImage src={sender.avatar} alt={sender.name} />
-          <AvatarFallback>{sender.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+          <AvatarImage src={senderAvatar} alt={senderName} />
+          <AvatarFallback>{senderName.split(" ").map((n) => n?.[0] || "").join("")}</AvatarFallback>
         </Avatar>
       )}
       
       <div className="max-w-[70%]">
         {!isCurrentUser && (
-          <div className="text-xs text-messaging-muted ml-1 mb-1">{sender.name}</div>
+          <div className="text-xs text-messaging-muted ml-1 mb-1">{senderName}</div>
         )}
         
         <div className={cn(
@@ -71,7 +97,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           "text-xs text-messaging-muted mt-1",
           isCurrentUser ? "text-right" : "text-left"
         )}>
-          {formatTimestamp(message.timestamp)}
+          {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
     </div>

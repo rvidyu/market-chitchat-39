@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Conversation, currentUser } from "@/data/messages";
+import { Conversation } from "@/data/types";
 import { useToast } from "@/hooks/use-toast";
 import { fetchConversations, sendMessage, markMessagesAsRead } from "@/data/messageApi";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -76,8 +76,9 @@ export const useConversationManagement = (
     if (!activeConversation) return;
 
     // Find the recipient (not the current user)
+    const currentUserId = supabase.auth.getSession().then(response => response.data.session?.user.id);
     const recipient = activeConversation.participants.find(
-      (participant) => participant.id !== currentUser.id
+      (participant) => participant.id !== currentUserId
     );
 
     if (!recipient) return;
@@ -108,13 +109,10 @@ export const useConversationManagement = (
 
   // Set up realtime subscription for new messages
   useEffect(() => {
-    // Get the current authenticated user from Supabase - FIX HERE
-    let user;
-    
-    // Use async/await properly with an immediately invoked async function
-    (async () => {
+    // Get the current authenticated user from Supabase
+    const fetchUser = async () => {
       const { data } = await supabase.auth.getUser();
-      user = data.user;
+      const user = data.user;
       
       if (user) {
         // Set up the channel for real-time messages
@@ -146,10 +144,15 @@ export const useConversationManagement = (
           supabase.removeChannel(channel);
         };
       }
-    })();
+    };
     
-    // Return an empty cleanup function for React's useEffect
-    return () => {};
+    // Call the async function
+    const cleanup = fetchUser();
+    
+    // Return cleanup function
+    return () => {
+      cleanup.then(cleanupFn => cleanupFn && cleanupFn());
+    };
   }, [queryClient, toast]);
 
   return {

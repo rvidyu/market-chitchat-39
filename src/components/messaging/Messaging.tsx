@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ConversationView from "./ConversationView";
@@ -9,6 +10,7 @@ import { useSpamManagement } from "./hooks/useSpamManagement";
 import { useConversationManagement } from "./hooks/useConversationManagement";
 import MobileMessagingView from "./MobileMessagingView";
 import { useAuth } from "@/contexts/auth";
+import { Conversation } from "@/data/types"; // Import from types.ts instead of messages.ts
 
 interface MessagingProps {
   initialConversationId?: string | null;
