@@ -1,18 +1,26 @@
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Conversation, currentUser } from "@/data/messages";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Flag, MoreVertical } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ConversationViewProps {
   conversation: Conversation;
   onSendMessage: (text: string, images?: File[]) => void;
+  onReportSpam?: (conversationId: string) => void;
 }
 
-export default function ConversationView({ conversation, onSendMessage }: ConversationViewProps) {
+export default function ConversationView({ conversation, onSendMessage, onReportSpam }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Find the other participant (not the current user)
@@ -24,6 +32,12 @@ export default function ConversationView({ conversation, onSendMessage }: Conver
     // Scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation.messages]);
+  
+  const handleReportSpam = () => {
+    if (onReportSpam) {
+      onReportSpam(conversation.id);
+    }
+  };
   
   if (!otherParticipant) return null;
   
@@ -45,6 +59,24 @@ export default function ConversationView({ conversation, onSendMessage }: Conver
             </p>
           </div>
         </div>
+        
+        {/* Report Dropdown Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem 
+              onClick={handleReportSpam}
+              className="text-red-600 cursor-pointer"
+            >
+              <Flag className="h-4 w-4 mr-2" />
+              Report as spam
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       {/* Messages */}

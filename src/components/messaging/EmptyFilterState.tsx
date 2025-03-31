@@ -17,7 +17,7 @@ export default function EmptyFilterState({ activeFilter, icon }: EmptyFilterStat
       case "unread":
         return "No unread messages";
       case "spam":
-        return "No spam detected";
+        return "No messages have been marked as spam";
       default:
         return "No messages found";
     }

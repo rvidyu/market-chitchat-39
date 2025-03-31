@@ -8,6 +8,7 @@ import EmptyState from "./EmptyState";
 import ConversationsList from "./ConversationsList";
 import MobileHeader from "./MobileHeader";
 import MessagingContainer from "./MessagingContainer";
+import SpamReportNotification from "./SpamReportNotification";
 
 interface MessagingProps {
   initialConversationId?: string | null;
@@ -16,6 +17,9 @@ interface MessagingProps {
 export default function Messaging({ initialConversationId = null }: MessagingProps) {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(initialConversationId);
   const [conversationsList, setConversationsList] = useState(conversations);
+  const [spamConversations, setSpamConversations] = useState<string[]>([]);
+  const [showSpamNotification, setShowSpamNotification] = useState(false);
+  const [lastReportedSpam, setLastReportedSpam] = useState<string | null>(null);
   const { toast } = useToast();
   const { isMobile } = useIsMobile();
 
@@ -38,7 +42,12 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
 
   // Find the active conversation
   const activeConversation = conversationsList.find(
-    (conversation) => conversation.id === activeConversationId
+    (conversation) => conversation.id === activeConversationId && !spamConversations.includes(conversation.id)
+  );
+  
+  // Get spam conversations
+  const spamConversationsList = conversationsList.filter(
+    (conversation) => spamConversations.includes(conversation.id)
   );
 
   // Handle sending a new message
@@ -111,6 +120,49 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
     setConversationsList(updatedConversations);
   };
   
+  // Handle reporting spam
+  const handleReportSpam = (conversationId: string) => {
+    // Add the conversation to spam list
+    setSpamConversations([...spamConversations, conversationId]);
+    
+    // If this was the active conversation, clear active conversation
+    if (activeConversationId === conversationId) {
+      setActiveConversationId(null);
+    }
+    
+    // Show notification
+    setShowSpamNotification(true);
+    setLastReportedSpam(conversationId);
+    
+    // Hide notification after 5 seconds
+    setTimeout(() => {
+      setShowSpamNotification(false);
+    }, 5000);
+  };
+  
+  // Handle undoing spam report
+  const handleUndoSpam = () => {
+    if (lastReportedSpam) {
+      setSpamConversations(spamConversations.filter(id => id !== lastReportedSpam));
+      setShowSpamNotification(false);
+      
+      toast({
+        title: "Spam report undone",
+        description: "The conversation has been restored to your inbox.",
+      });
+    }
+  };
+  
+  // Handle marking a conversation as not spam
+  const handleMarkNotSpam = (conversationId: string) => {
+    setSpamConversations(spamConversations.filter(id => id !== conversationId));
+    
+    toast({
+      title: "Marked as not spam",
+      description: "The conversation has been moved back to your inbox.",
+    });
+  };
+  
   const handleBackToList = () => {
     setActiveConversationId(null);
   };
@@ -126,6 +178,7 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
             <ConversationView
               conversation={activeConversation}
               onSendMessage={handleSendMessage}
+              onReportSpam={handleReportSpam}
             />
           )}
         </div>
@@ -141,6 +194,8 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
           conversations={conversationsList}
           activeConversationId={activeConversationId}
           onSelectConversation={handleSelectConversation}
+          spamConversations={spamConversations}
+          onMarkNotSpam={handleMarkNotSpam}
         />
       </div>
 
@@ -150,11 +205,17 @@ export default function Messaging({ initialConversationId = null }: MessagingPro
           <ConversationView
             conversation={activeConversation}
             onSendMessage={handleSendMessage}
+            onReportSpam={handleReportSpam}
           />
         ) : (
           <EmptyState />
         )}
       </div>
+      
+      {/* Spam Report Notification with Undo */}
+      {showSpamNotification && (
+        <SpamReportNotification onUndo={handleUndoSpam} />
+      )}
     </MessagingContainer>
   );
 }

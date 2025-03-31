@@ -3,15 +3,25 @@ import { useState } from "react";
 import { Conversation, User, formatTimestamp, currentUser } from "@/data/messages";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Flag, CheckCircle } from "lucide-react";
 
 interface ConversationItemProps {
   conversation: Conversation;
   isActive: boolean;
   onClick: () => void;
+  isSpam?: boolean;
+  onMarkNotSpam?: (id: string) => void;
 }
 
-export default function ConversationItem({ conversation, isActive, onClick }: ConversationItemProps) {
+export default function ConversationItem({ 
+  conversation, 
+  isActive, 
+  onClick, 
+  isSpam = false,
+  onMarkNotSpam 
+}: ConversationItemProps) {
   // Find the other participant (not the current user)
   const otherParticipant = conversation.participants.find(
     (participant) => participant.id !== currentUser.id
@@ -21,13 +31,21 @@ export default function ConversationItem({ conversation, isActive, onClick }: Co
   const lastMessage = conversation.messages[conversation.messages.length - 1];
   const isLastMessageFromCurrentUser = lastMessage.senderId === currentUser.id;
   
+  const handleMarkNotSpam = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onMarkNotSpam) {
+      onMarkNotSpam(conversation.id);
+    }
+  };
+  
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 cursor-pointer transition-colors rounded-md mx-1 my-0.5",
+        "flex items-center gap-3 p-3 cursor-pointer transition-colors rounded-md mx-1 my-0.5 relative",
         isActive 
           ? "bg-messaging-primary bg-opacity-10 border-l-4 border-messaging-primary" 
-          : "hover:bg-gray-50 border-l-4 border-transparent"
+          : "hover:bg-gray-50 border-l-4 border-transparent",
+        isSpam ? "bg-red-50" : ""
       )}
       onClick={onClick}
     >
@@ -53,6 +71,11 @@ export default function ConversationItem({ conversation, isActive, onClick }: Co
             isActive ? "text-messaging-primary" : "text-messaging-text"
           )}>
             {otherParticipant.name}
+            {isSpam && (
+              <Badge variant="destructive" className="ml-2">
+                <Flag className="h-3 w-3 mr-1" /> Spam
+              </Badge>
+            )}
           </h3>
           <span className="text-xs text-messaging-muted whitespace-nowrap ml-2">
             {formatTimestamp(lastMessage.timestamp)}
@@ -77,6 +100,18 @@ export default function ConversationItem({ conversation, isActive, onClick }: Co
           )}
         </div>
       </div>
+      
+      {isSpam && onMarkNotSpam && (
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="absolute top-0 right-0 m-1 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+          onClick={handleMarkNotSpam}
+        >
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Not spam
+        </Button>
+      )}
     </div>
   );
 }
