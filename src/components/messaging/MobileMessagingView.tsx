@@ -8,15 +8,13 @@ interface MobileMessagingViewProps {
   onSendMessage: (text: string, images?: File[]) => void;
   onReportSpam: (conversationId: string) => void;
   onBackToList: () => void;
-  blockedUsers?: string[];
 }
 
 export default function MobileMessagingView({
   activeConversation,
   onSendMessage,
   onReportSpam,
-  onBackToList,
-  blockedUsers = []
+  onBackToList
 }: MobileMessagingViewProps) {
   return (
     <div className="w-full flex flex-col">
@@ -27,7 +25,6 @@ export default function MobileMessagingView({
           conversation={activeConversation}
           onSendMessage={onSendMessage}
           onReportSpam={onReportSpam}
-          blockedUsers={blockedUsers}
         />
       )}
     </div>

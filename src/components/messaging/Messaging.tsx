@@ -27,9 +27,7 @@ export default function Messaging({ initialConversationId = null, onNotSpamMarke
     showSpamNotification,
     handleReportSpam,
     handleUndoSpam,
-    handleMarkNotSpam,
-    blockedUsers,
-    loadBlockedUsers
+    handleMarkNotSpam
   } = useSpamManagement({ onNotSpamMarked });
   
   const {
@@ -41,13 +39,6 @@ export default function Messaging({ initialConversationId = null, onNotSpamMarke
     handleSendMessage,
     handleSelectConversation
   } = useConversationManagement(initialConversationId);
-
-  // Load blocked users when component mounts
-  useEffect(() => {
-    if (user) {
-      loadBlockedUsers();
-    }
-  }, [user, loadBlockedUsers]);
 
   // Find the active conversation
   const activeConversation = conversationsList.find(
@@ -101,7 +92,6 @@ export default function Messaging({ initialConversationId = null, onNotSpamMarke
           onSendMessage={handleSendMessage}
           onReportSpam={handleReportSpam}
           onBackToList={handleBackToList}
-          blockedUsers={blockedUsers}
         />
       </MessagingContainer>
     );
@@ -117,7 +107,6 @@ export default function Messaging({ initialConversationId = null, onNotSpamMarke
           onSelectConversation={handleSelectConversation}
           spamConversations={spamConversations}
           onMarkNotSpam={handleMarkNotSpam}
-          blockedUsers={blockedUsers}
         />
       </div>
 
@@ -128,7 +117,6 @@ export default function Messaging({ initialConversationId = null, onNotSpamMarke
             conversation={activeConversation}
             onSendMessage={handleSendMessage}
             onReportSpam={handleReportSpam}
-            blockedUsers={blockedUsers}
           />
         ) : (
           <EmptyState />
