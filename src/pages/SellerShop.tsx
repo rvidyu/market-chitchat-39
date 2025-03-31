@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -9,7 +8,7 @@ import ShopProfileSection from "@/components/shop/ShopProfileSection";
 import ShopProducts from "@/components/shop/ShopProducts";
 import { useShopData } from "@/hooks/useShopData";
 import { Product } from "@/data/products";
-import { useAuth } from "@/contexts/auth/useAuth"; // Updated import path
+import { useAuth } from "@/contexts/auth"; // Import from the compatibility layer
 
 const SellerShop = () => {
   const { sellerId } = useParams();
