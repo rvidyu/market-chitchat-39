@@ -19,7 +19,10 @@ export default function MessageContent({
   isLoading
 }: MessageContentProps) {
   return (
-    <>
+    <div className={cn(
+      "flex flex-col",
+      isCurrentUser ? "items-end" : "items-start"
+    )}>
       {/* Product Card (if any) */}
       {message.product && (
         <ProductMessageCard product={message.product} />
@@ -32,7 +35,6 @@ export default function MessageContent({
           ? "bg-messaging-primary text-white rounded-tr-none"
           : "bg-gray-100 text-messaging-text rounded-tl-none"
       )}>
-        {/* Removed the sender name display that was here */}
         <p className="whitespace-pre-wrap">{message.text}</p>
       </div>
       
@@ -49,6 +51,6 @@ export default function MessageContent({
           <CheckCircle className="h-3 w-3 text-messaging-primary" />
         </div>
       )}
-    </>
+    </div>
   );
 }
