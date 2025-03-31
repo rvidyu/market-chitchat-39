@@ -11,7 +11,8 @@ import { MessageSquare } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Product } from "@/data/products";
 import { SellerData } from "@/data/sellers";
-import { conversations } from "@/data/messages";
+import { sendMessage } from "@/data/messageApi";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface MessageStarterProps {
   product: Product;
@@ -28,6 +29,7 @@ const ProductMessageStarter = ({ product, seller, variant = "button" }: MessageS
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const form = useForm<MessageFormValues>({
     defaultValues: {
@@ -35,43 +37,59 @@ const ProductMessageStarter = ({ product, seller, variant = "button" }: MessageS
     },
   });
 
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
+      // Convert product to format expected by sendMessage
+      const productData = {
+        id: product.id,
+        name: product.name,
+        image: product.imageUrl,
+        price: `$${product.price.toFixed(2)}`
+      };
+      
+      return sendMessage(seller.id, message, productData);
+    },
+    onSuccess: (data) => {
+      // Invalidate conversations query to refresh data
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      
+      // Show success toast
+      toast({
+        title: "Message sent",
+        description: `Your message about "${product.name}" has been sent to ${seller.name}.`,
+      });
+      
+      // Construct conversation ID from user and seller IDs (sorted)
+      const userIds = [user?.id, seller.id].sort();
+      const conversationId = userIds.join('-');
+      
+      // Close dialog and navigate to chat
+      setOpen(false);
+      form.reset();
+      
+      // Navigate to chat page, passing the conversation ID
+      navigate(`/chat`, { 
+        state: { 
+          conversationId
+        } 
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error sending message",
+        description: error.message || "There was an error sending your message.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const onSubmit = (data: MessageFormValues) => {
     if (!user) {
       navigate("/login");
       return;
     }
-
-    // In a real app, this would create a new conversation or add to an existing one
-    // For now, we'll simulate by finding the first conversation with this seller
-    // or creating a new ID
     
-    // Find if there's already a conversation with this seller
-    const existingConversation = conversations.find(conv => 
-      conv.participants.some(p => p.id === seller.id)
-    );
-    
-    const conversationId = existingConversation ? existingConversation.id : `new-conv-${Date.now()}`;
-    
-    // Show success toast
-    toast({
-      title: "Message sent",
-      description: `Your message about "${product.name}" has been sent to ${seller.name}.`,
-    });
-    
-    // Close dialog and navigate to chat
-    setOpen(false);
-    form.reset();
-    
-    // Navigate to chat page, passing the conversation ID and product information
-    navigate(`/chat/${seller.id}/${product.id}`, { 
-      state: { 
-        conversationId,
-        sellerId: seller.id,
-        productId: product.id,
-        productName: product.name,
-        initialMessage: data.message
-      } 
-    });
+    sendMessageMutation.mutate(data.message);
   };
   
   const handleQuickMessage = () => {
@@ -81,7 +99,7 @@ const ProductMessageStarter = ({ product, seller, variant = "button" }: MessageS
     }
     
     // Use the default message from the form
-    onSubmit({ message: form.getValues().message });
+    sendMessageMutation.mutate(form.getValues().message);
   };
 
   if (variant === "inline") {

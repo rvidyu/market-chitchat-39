@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      messages: {
+        Row: {
+          id: string
+          images: string[] | null
+          is_read: boolean
+          product_id: string | null
+          product_image: string | null
+          product_name: string | null
+          product_price: string | null
+          recipient_id: string
+          sender_id: string
+          text: string
+          timestamp: string
+        }
+        Insert: {
+          id?: string
+          images?: string[] | null
+          is_read?: boolean
+          product_id?: string | null
+          product_image?: string | null
+          product_name?: string | null
+          product_price?: string | null
+          recipient_id: string
+          sender_id: string
+          text: string
+          timestamp?: string
+        }
+        Update: {
+          id?: string
+          images?: string[] | null
+          is_read?: boolean
+          product_id?: string | null
+          product_image?: string | null
+          product_name?: string | null
+          product_price?: string | null
+          recipient_id?: string
+          sender_id?: string
+          text?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -38,7 +80,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      conversations: {
+        Row: {
+          conversation_id: string | null
+          is_read: boolean | null
+          last_message_id: string | null
+          recipient_id: string | null
+          sender_id: string | null
+          text: string | null
+          timestamp: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

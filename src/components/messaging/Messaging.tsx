@@ -1,6 +1,5 @@
 
 import { useEffect } from "react";
-import { conversations } from "@/data/messages";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ConversationView from "./ConversationView";
 import EmptyState from "./EmptyState";
@@ -10,6 +9,7 @@ import SpamReportNotification from "./SpamReportNotification";
 import { useSpamManagement } from "./hooks/useSpamManagement";
 import { useConversationManagement } from "./hooks/useConversationManagement";
 import MobileMessagingView from "./MobileMessagingView";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MessagingProps {
   initialConversationId?: string | null;
@@ -18,6 +18,7 @@ interface MessagingProps {
 
 export default function Messaging({ initialConversationId = null, onNotSpamMarked }: MessagingProps) {
   const { isMobile } = useIsMobile();
+  const { user } = useAuth();
   
   // Use our custom hooks
   const {
@@ -30,28 +31,13 @@ export default function Messaging({ initialConversationId = null, onNotSpamMarke
   
   const {
     conversationsList,
+    isLoading,
+    error,
     activeConversationId,
     setActiveConversationId,
     handleSendMessage,
     handleSelectConversation
-  } = useConversationManagement(conversations, initialConversationId);
-
-  // Update active conversation when initialConversationId changes
-  useEffect(() => {
-    if (initialConversationId) {
-      setActiveConversationId(initialConversationId);
-      
-      // Find the conversation
-      const conversation = conversationsList.find(
-        (conv) => conv.id === initialConversationId
-      );
-      
-      // If found, mark messages as read
-      if (conversation) {
-        handleSelectConversation(initialConversationId);
-      }
-    }
-  }, [initialConversationId]);
+  } = useConversationManagement(initialConversationId);
 
   // Find the active conversation
   const activeConversation = conversationsList.find(
@@ -62,6 +48,39 @@ export default function Messaging({ initialConversationId = null, onNotSpamMarke
   const handleBackToList = () => {
     setActiveConversationId(null);
   };
+
+  // If not logged in, show loading or error state
+  if (!user) {
+    return (
+      <MessagingContainer>
+        <div className="flex items-center justify-center h-full">
+          <p className="text-messaging-muted">Please log in to view your messages.</p>
+        </div>
+      </MessagingContainer>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <MessagingContainer>
+        <div className="flex items-center justify-center h-full">
+          <p className="text-messaging-muted">Loading conversations...</p>
+        </div>
+      </MessagingContainer>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <MessagingContainer>
+        <div className="flex items-center justify-center h-full">
+          <p className="text-red-500">Error loading conversations: {error.message}</p>
+        </div>
+      </MessagingContainer>
+    );
+  }
 
   // Show only conversations list on mobile if no active conversation
   if (isMobile && activeConversationId) {

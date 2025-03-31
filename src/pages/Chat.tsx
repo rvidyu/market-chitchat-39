@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Store, MessageSquare, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { conversations } from "@/data/messages";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import QuickReplyManager from "@/components/messaging/QuickReplyManager";
 import { Button } from "@/components/ui/button";
@@ -21,37 +20,19 @@ const Chat = () => {
   const [quickReplyManagerOpen, setQuickReplyManagerOpen] = useState(false);
 
   useEffect(() => {
+    // Handle conversation ID from location state
     if (location.state?.conversationId) {
       setActiveConversationId(location.state.conversationId);
     }
-
-    if (sellerId && productId && location.state?.initialMessage) {
-      console.log("Opening chat with seller:", sellerId, "about product:", productId);
-      
-      const existingConversation = conversations.find(conv => 
-        conv.participants.some(p => p.id === sellerId)
-      );
-      
-      const conversationId = existingConversation ? existingConversation.id : `new-conv-${Date.now()}`;
+    
+    // Handle conversation from URL parameters
+    if (sellerId && user) {
+      // Create conversation ID from user and seller IDs (sorted)
+      const userIds = [user.id, sellerId].sort();
+      const conversationId = userIds.join('-');
       setActiveConversationId(conversationId);
-      
-      if (location.state?.initialMessage && !location.state.messageSent) {
-        toast({
-          title: "Message sent",
-          description: `Your message about "${location.state.productName}" has been sent to the seller.`,
-        });
-        
-        navigate(`/chat/${sellerId}/${productId}`, {
-          state: {
-            ...location.state,
-            messageSent: true,
-            conversationId
-          },
-          replace: true
-        });
-      }
     }
-  }, [location.state, sellerId, productId, navigate]);
+  }, [location.state, sellerId, productId, user, navigate]);
 
   const handleMarkNotSpam = () => {
     toast({

@@ -1,89 +1,112 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Conversation, currentUser } from "@/data/messages";
 import { useToast } from "@/hooks/use-toast";
+import { fetchConversations, sendMessage, markMessagesAsRead } from "@/data/messageApi";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useConversationManagement = (
-  initialConversations: Conversation[],
   initialConversationId: string | null = null
 ) => {
-  const [conversationsList, setConversationsList] = useState(initialConversations);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(initialConversationId);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch conversations from Supabase
+  const { data: conversationsList = [], isLoading, error } = useQuery({
+    queryKey: ['conversations'],
+    queryFn: fetchConversations,
+    staleTime: 1000 * 60, // 1 minute
+  });
 
   // Handle sending a new message
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ recipientId, text, images }: { recipientId: string, text: string, images?: File[] }) => {
+      // Handle image uploads (in a real app)
+      const imageUrls: string[] = [];
+      if (images && images.length > 0) {
+        images.forEach(image => {
+          const imageUrl = URL.createObjectURL(image);
+          imageUrls.push(imageUrl);
+        });
+      }
+
+      return sendMessage(recipientId, text, undefined, imageUrls.length > 0 ? imageUrls : undefined);
+    },
+    onSuccess: () => {
+      // Invalidate conversations query to refresh data
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      
+      // Show success toast
+      toast({
+        title: "Message sent",
+        description: "Your message has been sent successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error sending message",
+        description: error.message || "There was an error sending your message.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle marking messages as read
+  const markAsReadMutation = useMutation({
+    mutationFn: markMessagesAsRead,
+    onSuccess: () => {
+      // Invalidate conversations query to refresh data
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    }
+  });
+
+  // Handle sending a message
   const handleSendMessage = (text: string, images?: File[]) => {
     if (!activeConversationId) return;
 
-    // Create image URLs (in a real app, these would be uploaded to a server)
-    const imageUrls: string[] = [];
-    if (images && images.length > 0) {
-      images.forEach(image => {
-        const imageUrl = URL.createObjectURL(image);
-        imageUrls.push(imageUrl);
-      });
-    }
+    // Find the active conversation
+    const activeConversation = conversationsList.find(
+      (conversation) => conversation.id === activeConversationId
+    );
 
-    // Create a new conversations list with the new message
-    const updatedConversations = conversationsList.map((conversation) => {
-      if (conversation.id === activeConversationId) {
-        // Create a new message
-        const newMessage = {
-          id: `msg-${Date.now()}`,
-          senderId: currentUser.id,
-          text,
-          timestamp: new Date().toISOString(),
-          isRead: true,
-          images: imageUrls.length > 0 ? imageUrls : undefined,
-        };
+    if (!activeConversation) return;
 
-        // Return the updated conversation
-        return {
-          ...conversation,
-          messages: [...conversation.messages, newMessage],
-          lastActivity: new Date().toISOString(),
-        };
-      }
-      return conversation;
-    });
+    // Find the recipient (not the current user)
+    const recipient = activeConversation.participants.find(
+      (participant) => participant.id !== currentUser.id
+    );
 
-    // Update the state
-    setConversationsList(updatedConversations);
+    if (!recipient) return;
 
-    // Show success toast
-    toast({
-      title: "Message sent",
-      description: images && images.length > 0 
-        ? `Your message with ${images.length} ${images.length === 1 ? 'image' : 'images'} has been sent.`
-        : "Your message has been sent successfully.",
+    // Send the message
+    sendMessageMutation.mutate({ 
+      recipientId: recipient.id, 
+      text, 
+      images 
     });
   };
 
   // Mark messages as read when a conversation is selected
   const handleSelectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId);
-
-    // Mark all messages in the conversation as read
-    const updatedConversations = conversationsList.map((conversation) => {
-      if (conversation.id === conversationId) {
-        return {
-          ...conversation,
-          messages: conversation.messages.map((message) => ({
-            ...message,
-            isRead: true,
-          })),
-          unreadCount: 0,
-        };
-      }
-      return conversation;
-    });
-
-    setConversationsList(updatedConversations);
+    
+    // Mark messages as read
+    markAsReadMutation.mutate(conversationId);
   };
+
+  // Update active conversation when initialConversationId changes
+  useEffect(() => {
+    if (initialConversationId) {
+      setActiveConversationId(initialConversationId);
+      markAsReadMutation.mutate(initialConversationId);
+    }
+  }, [initialConversationId]);
 
   return {
     conversationsList,
-    setConversationsList,
+    isLoading,
+    error,
     activeConversationId,
     setActiveConversationId,
     handleSendMessage,
