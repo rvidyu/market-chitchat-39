@@ -1,19 +1,23 @@
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth";
 import { useNavigate, useParams } from "react-router-dom";
-import { Store, Package } from "lucide-react";
+import { Store, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
 import ShopProfile from "@/components/shop/ShopProfile";
 import ShopStats from "@/components/shop/ShopStats";
 import ProductsGrid from "@/components/shop/ProductsGrid";
 import { SellerData, MOCK_SELLERS } from "@/data/sellers";
 import { getProductsBySellerId, Product } from "@/data/products";
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader, DialogTrigger } from "@/components/ui/dialog";
+import AddProductForm from "@/components/shop/AddProductForm";
+import { supabase } from "@/integrations/supabase/client";
 
 const SellerShop = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const navigate = useNavigate();
   const { sellerId } = useParams();
   
@@ -24,48 +28,112 @@ const SellerShop = () => {
   const [shopData, setShopData] = useState<SellerData | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAddProductDialog, setShowAddProductDialog] = useState(false);
+
+  // Function to load products from Supabase
+  const loadSupabaseProducts = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('seller_id', id);
+
+      if (error) {
+        console.error("Error fetching products:", error);
+        return [];
+      }
+
+      // Convert Supabase products to our Product interface format
+      return data.map(item => ({
+        id: item.id,
+        sellerId: item.seller_id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        imageUrl: item.image_url,
+        category: item.category,
+        stock: item.stock,
+        createdAt: item.created_at
+      }));
+    } catch (err) {
+      console.error("Error in loadSupabaseProducts:", err);
+      return [];
+    }
+  };
 
   useEffect(() => {
-    if (isOwnShop) {
-      // If it's the user's own shop
-      if (user?.role !== "seller") {
-        setIsLoading(false);
-        return; // No shop data if not a seller
-      }
-      // Use the logged-in seller's data
-      setShopData(MOCK_SELLERS[user.id] || {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: "seller",
-        shopDescription: "Welcome to my handmade and vintage shop! I specialize in creating unique, one-of-a-kind items made with love and care.",
-        stats: {
-          itemsSold: 0,
-          rating: 0,
-          products: 0,
-          reviews: 0
-        }
-      });
+    const fetchData = async () => {
+      setIsLoading(true);
       
-      // Get products for this seller
-      setProducts(getProductsBySellerId(user.id));
-    } else {
-      // Viewing another seller's shop
-      // Fetch the seller data based on the sellerId
-      const sellerData = MOCK_SELLERS[sellerId || ""] || null;
-      if (sellerData) {
-        setShopData(sellerData);
-        // Get products for this seller
-        setProducts(getProductsBySellerId(sellerData.id));
+      if (isOwnShop) {
+        // If it's the user's own shop
+        if (user?.role !== "seller") {
+          setIsLoading(false);
+          return; // No shop data if not a seller
+        }
+        
+        // Use the logged-in seller's data
+        setShopData(MOCK_SELLERS[user.id] || {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: "seller",
+          shopDescription: "Welcome to my handmade and vintage shop! I specialize in creating unique, one-of-a-kind items made with love and care.",
+          stats: {
+            itemsSold: 0,
+            rating: 0,
+            products: 0,
+            reviews: 0
+          }
+        });
+        
+        // Try to get products from Supabase first
+        const supabaseProducts = await loadSupabaseProducts(user.id);
+        
+        // If no Supabase products, fall back to mock data
+        const allProducts = supabaseProducts.length > 0 
+          ? supabaseProducts 
+          : getProductsBySellerId(user.id);
+          
+        setProducts(allProducts);
       } else {
-        console.error(`Seller with ID ${sellerId} not found`);
-        // Set to the default seller if not found
-        const defaultSeller = MOCK_SELLERS["seller-1"];
-        setShopData(defaultSeller);
-        setProducts(getProductsBySellerId(defaultSeller.id));
+        // Viewing another seller's shop
+        // Fetch the seller data based on the sellerId
+        const sellerData = MOCK_SELLERS[sellerId || ""] || null;
+        if (sellerData) {
+          setShopData(sellerData);
+          
+          // Try to get products from Supabase first
+          const supabaseProducts = await loadSupabaseProducts(sellerData.id);
+          
+          // If no Supabase products, fall back to mock data
+          const allProducts = supabaseProducts.length > 0 
+            ? supabaseProducts 
+            : getProductsBySellerId(sellerData.id);
+            
+          setProducts(allProducts);
+        } else {
+          console.error(`Seller with ID ${sellerId} not found`);
+          // Set to the default seller if not found
+          const defaultSeller = MOCK_SELLERS["seller-1"];
+          setShopData(defaultSeller);
+          
+          // Try to get products from Supabase first
+          const supabaseProducts = await loadSupabaseProducts(defaultSeller.id);
+          
+          // If no Supabase products, fall back to mock data
+          const allProducts = supabaseProducts.length > 0 
+            ? supabaseProducts 
+            : getProductsBySellerId(defaultSeller.id);
+            
+          setProducts(allProducts);
+        }
       }
-    }
-    setIsLoading(false);
+      
+      setIsLoading(false);
+    };
+
+    fetchData();
   }, [sellerId, user, isOwnShop]);
 
   // Handler to update shop description
@@ -86,6 +154,19 @@ const SellerShop = () => {
         console.log("Updated shop description for user:", user.id, newDescription);
       }
     }
+  };
+
+  // Handler for successfully adding a product
+  const handleProductAdded = (newProduct: Product) => {
+    // Add the new product to the local state
+    setProducts(prev => [newProduct, ...prev]);
+    setShowAddProductDialog(false);
+    
+    // Show success message
+    toast({
+      title: "Product Added",
+      description: `${newProduct.name} has been added to your shop.`,
+    });
   };
   
   // Only sellers should have a shop page when viewing their own shop
@@ -158,12 +239,29 @@ const SellerShop = () => {
                 {isOwnShop ? "Your Products" : `${shopData.name}'s Products`}
               </h2>
               {isOwnShop && (
-                <Button 
-                  variant="outline" 
-                  className="bg-white text-messaging-primary hover:bg-gray-100"
-                >
-                  Add New Product
-                </Button>
+                <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="bg-white text-messaging-primary hover:bg-gray-100"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Add New Product
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[550px]">
+                    <DialogHeader>
+                      <DialogTitle>Add New Product</DialogTitle>
+                      <DialogDescription>
+                        Enter the details for your new product. Click save when you're done.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <AddProductForm 
+                      sellerId={user?.id || ''} 
+                      onSuccess={handleProductAdded} 
+                      onCancel={() => setShowAddProductDialog(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
               )}
             </div>
           </CardHeader>
