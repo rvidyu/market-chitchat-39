@@ -41,6 +41,24 @@ export const useProductForm = ({ sellerId, onSuccess, onError }: UseProductFormP
     console.log("Submitting product with values:", values);
 
     try {
+      // Check if the sellerId is a proper UUID
+      if (!isValidUUID(sellerId)) {
+        // If it's not a valid UUID, we need to fetch the actual UUID from the profiles table
+        // This assumes that auth provider has already set up the user in profiles
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', sellerId)
+          .maybeSingle();
+
+        if (profileError || !profileData) {
+          console.error("Error fetching seller profile:", profileError);
+          throw new Error("Could not verify seller identity");
+        }
+
+        sellerId = profileData.id;
+      }
+
       // Insert product into Supabase
       const { data, error } = await supabase
         .from('products')
@@ -106,6 +124,12 @@ export const useProductForm = ({ sellerId, onSuccess, onError }: UseProductFormP
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Helper function to validate if a string is a valid UUID
+  const isValidUUID = (str: string) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
   };
 
   return {

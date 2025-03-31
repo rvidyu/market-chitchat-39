@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 // Function to load products from Supabase
 const loadSupabaseProducts = async (id: string) => {
   try {
+    // Check if id is a valid UUID to prevent SQL errors
+    if (!id || !isValidUUID(id)) {
+      console.error("Invalid seller ID format for Supabase query:", id);
+      return [];
+    }
+
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -34,6 +41,12 @@ const loadSupabaseProducts = async (id: string) => {
     console.error("Error in loadSupabaseProducts:", err);
     return [];
   }
+};
+
+// Helper function to validate if a string is a valid UUID
+const isValidUUID = (str: string) => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
 };
 
 export const useShopData = (sellerId?: string) => {
