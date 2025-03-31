@@ -1,5 +1,4 @@
 
-import { useState, useEffect } from "react";
 import { Message } from "@/data/types";
 import { formatTimestamp } from "@/data/messageUtils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -7,50 +6,15 @@ import { CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ProductMessageCard from "./ProductMessageCard";
 import MessageImageAttachment from "./MessageImageAttachment";
-import { supabase } from "@/integrations/supabase/client";
+import { useMessageUser } from "@/hooks/useMessageUser";
 
 interface MessageBubbleProps {
   message: Message;
 }
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
-  const [isCurrentUser, setIsCurrentUser] = useState(false);
-  const [senderName, setSenderName] = useState<string>("");
-  
-  // Get current user and check if message is from current user
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setIsCurrentUser(message.senderId === user.id);
-          
-          // Fetch user profile from database
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('name')
-            .eq('id', message.senderId)
-            .single();
-            
-          if (error) {
-            console.error("Error fetching profile:", error);
-            setSenderName(isCurrentUser ? "You" : "User");
-          } else if (profile && profile.name) {
-            // If it's the current user, show "You", otherwise show their name
-            setSenderName(isCurrentUser ? "You" : profile.name);
-          } else {
-            // Fallback for when profile doesn't exist or name is null
-            setSenderName(isCurrentUser ? "You" : `User ${message.senderId.substring(0, 7)}`);
-          }
-        }
-      } catch (error) {
-        console.error("Error in checkUser:", error);
-        setSenderName(isCurrentUser ? "You" : "User");
-      }
-    };
-    
-    checkUser();
-  }, [message.senderId, isCurrentUser]);
+  // Use our custom hook to get user information
+  const { isCurrentUser, senderName, isLoading } = useMessageUser(message.senderId);
   
   // Dynamic rendering for optimal performance
   const renderMessageContent = () => (
@@ -109,7 +73,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         <div className="flex items-center mb-1">
           {/* Show sender name and timestamp */}
           <span className="text-xs font-medium mr-2">
-            {senderName}
+            {isLoading ? "Loading..." : senderName}
           </span>
           <span className="text-xs text-messaging-muted">
             {formatTimestamp(message.timestamp)}
