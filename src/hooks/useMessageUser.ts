@@ -43,7 +43,7 @@ export const useMessageUser = (senderId: string) => {
             senderName: isCurrentUser ? "You" : `User ${senderId.substring(0, 7)}`
           });
         } else if (profile && profile.name) {
-          // If it's the current user, show "You", otherwise show their name
+          // If it's the current user, show "You", otherwise show their full name
           setUserData({
             isCurrentUser,
             senderName: isCurrentUser ? "You" : profile.name
