@@ -26,13 +26,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Set up auth state listener
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        setSession(currentSession);
-        
-        if (currentSession?.user) {
-          // Get user profile data
-          setTimeout(async () => {
+    // Configure Supabase client for better auth handling
+    supabase.auth.onAuthStateChange((event, currentSession) => {
+      console.log("Auth state changed:", event);
+      setSession(currentSession);
+      
+      if (currentSession?.user) {
+        // Get user profile data
+        setTimeout(async () => {
+          try {
             const { data: profile, error } = await supabase
               .from('profiles')
               .select('*')
@@ -43,13 +45,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUser(formatUserData(currentSession.user.id, currentSession.user.email, profile));
             } else {
               console.error("Error fetching user profile:", error);
+              setError(error?.message || "Failed to fetch user profile");
             }
-          }, 0);
-        } else {
-          setUser(null);
-        }
+          } catch (err) {
+            console.error("Error in profile fetch:", err);
+          }
+        }, 0);
+      } else {
+        setUser(null);
       }
-    );
+    });
 
     // Check for existing session
     const initializeAuth = async () => {
@@ -58,14 +63,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(data.session);
         
         if (data.session?.user) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .maybeSingle();
+          try {
+            const { data: profile, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', data.session.user.id)
+              .maybeSingle();
 
-          if (!error && profile) {
-            setUser(formatUserData(data.session.user.id, data.session.user.email, profile));
+            if (!error && profile) {
+              setUser(formatUserData(data.session.user.id, data.session.user.email, profile));
+            } else {
+              console.error("Error fetching user profile:", error);
+            }
+          } catch (err) {
+            console.error("Error in initial profile fetch:", err);
           }
         }
       } catch (error) {
@@ -77,8 +88,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initializeAuth();
 
+    // Set up real-time subscriptions for user profile changes
+    const channel = supabase
+      .channel('public:profiles')
+      .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'profiles' }, 
+          async (payload) => {
+            console.log('Profile change detected:', payload);
+            // If the current user's profile changed, update the user state
+            if (session?.user && payload.new && payload.new.id === session.user.id) {
+              const updatedProfile = payload.new;
+              setUser(formatUserData(session.user.id, session.user.email, updatedProfile));
+            }
+          })
+      .subscribe();
+
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, []);
 

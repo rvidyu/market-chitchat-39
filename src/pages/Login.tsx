@@ -20,7 +20,6 @@ type FormData = z.infer<typeof formSchema>;
 
 const Login = () => {
   const { login, loading } = useAuth();
-  const [showDemoAccounts, setShowDemoAccounts] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -32,12 +31,6 @@ const Login = () => {
 
   const onSubmit = async (data: FormData) => {
     await login(data.email, data.password);
-  };
-
-  const handleDemoLogin = (email: string, password: string) => {
-    form.setValue("email", email);
-    form.setValue("password", password);
-    form.handleSubmit(onSubmit)();
   };
 
   return (
@@ -100,50 +93,6 @@ const Login = () => {
               </div>
             </form>
           </Form>
-
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <Button 
-              variant="outline" 
-              className="w-full text-sm" 
-              onClick={() => setShowDemoAccounts(!showDemoAccounts)}
-            >
-              {showDemoAccounts ? "Hide Demo Accounts" : "Show Demo Accounts"}
-            </Button>
-            
-            {showDemoAccounts && (
-              <div className="mt-4 space-y-2">
-                <div className="p-3 bg-gray-50 rounded-md">
-                  <div className="flex justify-between mb-1">
-                    <p className="text-sm font-medium">Buyer Account</p>
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto text-xs text-messaging-primary"
-                      onClick={() => handleDemoLogin("buyer@example.com", "password")}
-                    >
-                      Use this account
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500">Email: buyer@example.com</p>
-                  <p className="text-xs text-gray-500">Password: password</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-md">
-                  <div className="flex justify-between mb-1">
-                    <p className="text-sm font-medium">Seller Account</p>
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto text-xs text-messaging-primary"
-                      onClick={() => handleDemoLogin("seller@example.com", "password")}
-                    >
-                      Use this account
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500">Email: seller@example.com</p>
-                  <p className="text-xs text-gray-500">Password: password</p>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>
