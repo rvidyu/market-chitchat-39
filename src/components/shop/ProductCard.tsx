@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import ContactSellerButton from "./ContactSellerButton";
 
 interface ProductCardProps {
   product: Product;
@@ -28,6 +29,20 @@ const ProductCard = ({ product }: ProductCardProps) => {
       setError(null);
       
       try {
+        // Create a default seller with the ID to ensure we always have something to work with
+        const defaultSeller: SellerData = {
+          id: product.sellerId,
+          name: "Seller",
+          shopDescription: "Seller information unavailable",
+          role: "seller",
+          stats: {
+            rating: 0,
+            reviews: 0,
+            products: 1,
+            itemsSold: 0
+          }
+        };
+        
         // First try to fetch from Supabase directly
         const { data, error } = await supabase
           .from('profiles')
@@ -36,7 +51,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
           .maybeSingle();
           
         if (error) {
-          throw error;
+          console.error("Supabase profiles fetch error:", error);
+          // Don't throw - continue with fallback
         }
         
         if (data) {
@@ -54,30 +70,39 @@ const ProductCard = ({ product }: ProductCardProps) => {
             }
           });
         } else {
-          // Fallback to mock data service as backup
+          // Fallback to mock data service
           try {
             const sellerData = await getSellerById(product.sellerId);
-            setSeller(sellerData);
+            if (sellerData) {
+              setSeller(sellerData);
+            } else {
+              // If both methods fail, use the default seller
+              console.log("Using default seller for ID:", product.sellerId);
+              setSeller(defaultSeller);
+            }
           } catch (fallbackError) {
             console.error("Error in fallback seller fetch:", fallbackError);
-            // Create a placeholder seller if both methods fail
-            setSeller({
-              id: product.sellerId,
-              name: "Seller",
-              shopDescription: "Seller information unavailable",
-              role: "seller",
-              stats: {
-                rating: 0,
-                reviews: 0,
-                products: 1,
-                itemsSold: 0
-              }
-            });
+            // Use the default seller if everything fails
+            setSeller(defaultSeller);
           }
         }
       } catch (error) {
         console.error("Error loading seller:", error);
         setError("Could not load seller information.");
+        
+        // Even with an error, set a default seller to ensure the UI works
+        setSeller({
+          id: product.sellerId,
+          name: "Unknown Seller",
+          shopDescription: "Seller information unavailable",
+          role: "seller",
+          stats: {
+            rating: 0,
+            reviews: 0,
+            products: 1,
+            itemsSold: 0
+          }
+        });
       } finally {
         setIsLoading(false);
       }
@@ -147,14 +172,22 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <ShoppingCart className="h-4 w-4 mr-2" /> Add
           </Button>
           
-          <Button 
-            variant="outline" 
-            className="border-messaging-primary text-messaging-primary hover:bg-messaging-primary/10"
-            onClick={handleMessageClick}
-            disabled={isLoading}
-          >
-            <MessageSquare className="h-4 w-4 mr-2" /> Contact
-          </Button>
+          {seller ? (
+            <ContactSellerButton 
+              product={product}
+              seller={seller}
+              variant="button"
+            />
+          ) : (
+            <Button 
+              variant="outline" 
+              className="border-messaging-primary text-messaging-primary hover:bg-messaging-primary/10"
+              onClick={handleMessageClick}
+              disabled={isLoading}
+            >
+              <MessageSquare className="h-4 w-4 mr-2" /> Contact
+            </Button>
+          )}
         </div>
       </CardFooter>
     </Card>
