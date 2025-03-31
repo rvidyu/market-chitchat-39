@@ -66,6 +66,10 @@ export const useMessageSending = () => {
         }
       }
 
+      console.log("Sending message to recipient:", recipientId);
+      console.log("Message text:", text);
+      console.log("Image URLs:", imageUrls);
+
       // Send the message with image URLs
       return sendMessage(
         recipientId, 
@@ -79,6 +83,7 @@ export const useMessageSending = () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error) => {
+      console.error("Error in sendMessageMutation:", error);
       toast({
         title: "Error sending message",
         description: error instanceof Error ? error.message : "There was an error sending your message.",
@@ -93,14 +98,21 @@ export const useMessageSending = () => {
     text: string, 
     images?: File[]
   ) => {
-    if (!activeConversationId) return;
+    if (!activeConversationId) {
+      console.error("No active conversation ID provided");
+      return;
+    }
 
     // Find the active conversation
     const activeConversation = conversationsList.find(
       (conversation) => conversation.id === activeConversationId
     );
 
-    if (!activeConversation) return;
+    if (!activeConversation) {
+      console.error("Active conversation not found in list:", activeConversationId);
+      console.log("Available conversations:", conversationsList.map(c => c.id));
+      return;
+    }
 
     try {
       // Get the current user session
@@ -123,9 +135,17 @@ export const useMessageSending = () => {
       );
   
       if (!recipient) {
-        console.error("No recipient found in conversation");
+        console.error("No recipient found in conversation. Participants:", activeConversation.participants);
+        console.error("Current user ID:", currentUserId);
+        toast({
+          title: "Error sending message",
+          description: "Recipient not found. Please refresh the page and try again.",
+          variant: "destructive",
+        });
         return;
       }
+
+      console.log("Sending message to recipient:", recipient.id, "from user:", currentUserId);
   
       // Send the message
       sendMessageMutation.mutate({ 

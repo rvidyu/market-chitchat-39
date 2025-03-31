@@ -16,6 +16,9 @@ export const sendMessage = async (
       throw new Error('User not authenticated');
     }
     
+    console.log(`Sending message from ${user.id} to ${recipientId}`);
+    console.log(`Message text: ${text}`);
+    
     // Prepare the message data
     const messageData = {
       sender_id: user.id,
@@ -32,6 +35,8 @@ export const sendMessage = async (
       })
     };
     
+    console.log('Inserting message with data:', messageData);
+    
     // Insert the message into the database
     const { data: newMessage, error } = await supabase
       .from('messages')
@@ -40,12 +45,16 @@ export const sendMessage = async (
       .single();
       
     if (error) {
+      console.error('Error inserting message:', error);
       throw error;
     }
     
     if (!newMessage) {
+      console.error('No message data returned after insert');
       throw new Error('Failed to create message');
     }
+    
+    console.log('Message successfully created:', newMessage);
     
     // Create a unique conversation ID from the two user IDs (sorted)
     const participantIds = [user.id, recipientId].sort();

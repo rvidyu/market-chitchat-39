@@ -54,14 +54,20 @@ export const useRealtimeMessages = (
               const newMessageRecipientId = payload.new.recipient_id;
               
               // Create conversation ID in the same format as our app uses
+              // Generate a stable conversation ID by sorting the UUIDs
               const participantIds = [newMessageSenderId, newMessageRecipientId].sort();
               const messageConversationId = participantIds.join('-');
               
-              // Check if the message belongs to the active conversation
-              // Use a more flexible approach to check if the active conversation contains both participants
+              console.log("Message conversation ID:", messageConversationId);
+              console.log("Active conversation ID:", activeConversationId);
+              
+              // Create a more reliable way to check if the message belongs to the active conversation
+              // by checking if both participants are included in the active conversation ID
               const belongsToActiveConversation = activeConversationId && 
                 activeConversationId.includes(newMessageSenderId) && 
                 activeConversationId.includes(newMessageRecipientId);
+              
+              console.log("Belongs to active conversation:", belongsToActiveConversation);
               
               if (!belongsToActiveConversation) {
                 // Show notification for messages not in the active conversation
@@ -72,6 +78,7 @@ export const useRealtimeMessages = (
                 });
               } else if (onNewMessage) {
                 // If it's from the active conversation, mark it as read immediately
+                console.log("Marking message as read for conversation:", messageConversationId);
                 onNewMessage(messageConversationId);
               }
             }

@@ -22,8 +22,8 @@ export const useConversationManagement = (
   const { data: fetchedConversations = [], isLoading, error } = useQuery({
     queryKey: ['conversations'],
     queryFn: fetchConversations,
-    staleTime: 1000 * 30, // 30 seconds stale time for better caching
-    refetchInterval: 15000, // Poll every 15 seconds as backup
+    staleTime: 1000 * 10, // 10 seconds stale time for better refresh frequency
+    refetchInterval: 10000, // Poll every 10 seconds to ensure we get fresh data
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
@@ -62,6 +62,14 @@ export const useConversationManagement = (
 
   // Handle sending a message in the active conversation with optimized data access
   const sendMessageToActiveConversation = useCallback((text: string, images?: File[]) => {
+    if (!activeConversationId) {
+      console.error("Cannot send message: No active conversation");
+      return;
+    }
+    
+    console.log("Sending message to active conversation:", activeConversationId);
+    console.log("Using conversations:", latestConversationsRef.current.length);
+    
     handleSendMessage(activeConversationId, latestConversationsRef.current, text, images);
   }, [activeConversationId, handleSendMessage]);
 
