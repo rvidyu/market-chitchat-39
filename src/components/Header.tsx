@@ -30,9 +30,13 @@ const Header = () => {
               <Link to="/chat" className="text-messaging-primary hover:text-messaging-accent flex items-center">
                 <MessageSquare className="mr-1 h-4 w-4" /> Messages
               </Link>
-              {user.role === "seller" && (
+              {user.role === "seller" ? (
                 <Link to="/seller-shop" className="text-messaging-primary hover:text-messaging-accent flex items-center">
                   <Store className="mr-1 h-4 w-4" /> My Shop
+                </Link>
+              ) : (
+                <Link to="/buyer-dashboard" className="text-messaging-primary hover:text-messaging-accent flex items-center">
+                  <ShoppingBag className="mr-1 h-4 w-4" /> Discover Sellers
                 </Link>
               )}
             </nav>
@@ -70,11 +74,18 @@ const Header = () => {
                     <span>Messages</span>
                   </Link>
                 </DropdownMenuItem>
-                {user.role === "seller" && (
+                {user.role === "seller" ? (
                   <DropdownMenuItem asChild>
                     <Link to="/seller-shop" className="flex items-center w-full cursor-pointer">
                       <Store className="mr-2 h-4 w-4" />
                       <span>My Shop</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem asChild>
+                    <Link to="/buyer-dashboard" className="flex items-center w-full cursor-pointer">
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      <span>Discover Sellers</span>
                     </Link>
                   </DropdownMenuItem>
                 )}

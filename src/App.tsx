@@ -13,6 +13,7 @@ import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import SellerShop from "./pages/SellerShop";
 import Chat from "./pages/Chat";
+import BuyerDashboard from "./pages/BuyerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Chat />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/buyer-dashboard" 
+              element={
+                <ProtectedRoute>
+                  <BuyerDashboard />
                 </ProtectedRoute>
               } 
             />
