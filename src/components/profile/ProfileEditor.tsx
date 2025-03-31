@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
@@ -20,7 +21,8 @@ const ProfileEditor = () => {
     avatarUrl, 
     avatarFile, 
     handleFileChange, 
-    uploadAvatar 
+    uploadAvatar,
+    refreshAvatar 
   } = useAvatarUpload({ userId: user?.id });
   
   const { 
@@ -84,6 +86,11 @@ const ProfileEditor = () => {
           return;
         }
       }
+
+      // Force a refresh of the avatar to ensure latest version is shown
+      setTimeout(() => {
+        refreshAvatar();
+      }, 500);
 
       toast({
         title: "Profile updated",

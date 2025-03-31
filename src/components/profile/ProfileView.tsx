@@ -26,7 +26,8 @@ const ProfileView = () => {
             // Check if the file exists
             const response = await fetch(data.publicUrl, { method: 'HEAD' });
             if (response.ok) {
-              setAvatarUrl(data.publicUrl);
+              // Add a timestamp param to bust cache
+              setAvatarUrl(`${data.publicUrl}?t=${Date.now()}`);
             }
           }
         } catch (error) {
@@ -56,6 +57,11 @@ const ProfileView = () => {
 
       fetchAvatar();
       fetchProfileData();
+      
+      // Set up interval to refresh avatar
+      const intervalId = setInterval(fetchAvatar, 30000);
+      
+      return () => clearInterval(intervalId);
     }
   }, [user]);
 

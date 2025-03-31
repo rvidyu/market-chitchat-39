@@ -56,7 +56,7 @@ export default function MessageAvatar({
           try {
             const response = await fetch(data.publicUrl, { 
               method: 'HEAD',
-              cache: 'force-cache', // Force browser caching
+              cache: 'no-store', // Prevent browser caching
               signal: controller.signal
             });
             
@@ -65,9 +65,11 @@ export default function MessageAvatar({
             if (!isMounted.current) return;
             
             if (response.ok) {
-              setAvatarUrl(data.publicUrl + `?t=${now}`); // Add cache-busting
+              // Add cache-busting timestamp
+              const urlWithCacheBuster = `${data.publicUrl}?t=${now}`;
+              setAvatarUrl(urlWithCacheBuster);
               // Cache the URL
-              avatarCache[senderId] = { url: data.publicUrl, timestamp: now };
+              avatarCache[senderId] = { url: urlWithCacheBuster, timestamp: now };
             } else {
               avatarCache[senderId] = { url: null, timestamp: now };
             }

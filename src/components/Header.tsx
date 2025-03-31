@@ -35,7 +35,8 @@ const Header = () => {
           // Check if the file exists by making a HEAD request
           const response = await fetch(publicUrl.publicUrl, { method: 'HEAD' });
           if (response.ok) {
-            setAvatarUrl(publicUrl.publicUrl);
+            // Add a cache-busting timestamp parameter
+            setAvatarUrl(`${publicUrl.publicUrl}?t=${Date.now()}`);
           }
         }
       } catch (error) {
@@ -44,6 +45,11 @@ const Header = () => {
     };
 
     fetchAvatar();
+    
+    // Set up interval to refresh the avatar URL every minute
+    const intervalId = setInterval(fetchAvatar, 60000); // Refresh every minute
+    
+    return () => clearInterval(intervalId);
   }, [user]);
 
   // Generate initials for avatar fallback

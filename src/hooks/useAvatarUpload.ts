@@ -32,7 +32,8 @@ export const useAvatarUpload = ({ userId }: UseAvatarUploadProps) => {
         // Check if the file exists by making a HEAD request
         const response = await fetch(publicUrl.publicUrl, { method: 'HEAD' });
         if (response.ok) {
-          setAvatarUrl(publicUrl.publicUrl);
+          // Add a cache-busting timestamp parameter to force reload
+          setAvatarUrl(`${publicUrl.publicUrl}?t=${Date.now()}`);
         }
       }
     } catch (error) {
@@ -91,13 +92,14 @@ export const useAvatarUpload = ({ userId }: UseAvatarUploadProps) => {
       return { error: uploadError };
     }
     
-    // Get the public URL for future use
+    // Get the public URL for future use with cache busting
     const { data: publicUrlData } = supabase.storage
       .from('avatars')
       .getPublicUrl(filePath);
     
     if (publicUrlData) {
-      setAvatarUrl(publicUrlData.publicUrl);
+      const urlWithCacheBuster = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+      setAvatarUrl(urlWithCacheBuster);
     }
     
     return { publicUrl: publicUrlData?.publicUrl || null };
@@ -107,6 +109,7 @@ export const useAvatarUpload = ({ userId }: UseAvatarUploadProps) => {
     avatarUrl,
     avatarFile,
     handleFileChange,
-    uploadAvatar
+    uploadAvatar,
+    refreshAvatar: fetchAvatar // Add a method to refresh the avatar
   };
 };
