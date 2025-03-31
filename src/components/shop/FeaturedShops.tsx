@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { SellerData, fetchSellers, MOCK_SELLERS } from "@/data/sellers";
+import { SellerData, fetchSellers } from "@/data/sellers";
 import ShopOverview from "./ShopOverview";
+import { Award, TrendingUp } from "lucide-react";
 
 const FeaturedShops = () => {
   const [sellers, setSellers] = useState<SellerData[]>([]);
@@ -11,21 +12,12 @@ const FeaturedShops = () => {
     const loadSellers = async () => {
       setIsLoading(true);
       try {
-        // Fetch real sellers from Supabase
-        const realSellers = await fetchSellers();
-        
-        if (realSellers.length > 0) {
-          setSellers(realSellers);
-        } else {
-          // Fallback to mock sellers if no real ones are found
-          const mockSellersList = Object.values(MOCK_SELLERS).filter(seller => seller.role === "seller");
-          setSellers(mockSellersList);
-        }
+        // Fetch sellers from Supabase
+        const sellerData = await fetchSellers();
+        setSellers(sellerData);
       } catch (error) {
         console.error("Failed to load sellers:", error);
-        // Fallback to mock sellers
-        const mockSellersList = Object.values(MOCK_SELLERS).filter(seller => seller.role === "seller");
-        setSellers(mockSellersList);
+        setSellers([]);
       } finally {
         setIsLoading(false);
       }
@@ -37,9 +29,14 @@ const FeaturedShops = () => {
   if (isLoading) {
     return (
       <div className="w-full">
-        <h2 className="text-2xl font-bold mb-6 text-messaging-primary">Featured Sellers</h2>
-        <div className="p-6 text-center">
-          <p>Loading shops...</p>
+        <div className="flex items-center gap-2 mb-6">
+          <Award className="h-6 w-6 text-messaging-primary" />
+          <h2 className="text-2xl font-bold text-messaging-primary">Featured Sellers</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-gray-100 animate-pulse rounded-lg h-64"></div>
+          ))}
         </div>
       </div>
     );
@@ -48,9 +45,14 @@ const FeaturedShops = () => {
   if (sellers.length === 0) {
     return (
       <div className="w-full">
-        <h2 className="text-2xl font-bold mb-6 text-messaging-primary">Featured Sellers</h2>
-        <div className="p-6 text-center bg-gray-50 rounded-lg">
-          <p>No shops found. Be the first one to create a shop!</p>
+        <div className="flex items-center gap-2 mb-6">
+          <Award className="h-6 w-6 text-messaging-primary" />
+          <h2 className="text-2xl font-bold text-messaging-primary">Featured Sellers</h2>
+        </div>
+        <div className="p-8 text-center bg-gray-50 rounded-lg border border-dashed border-gray-300">
+          <Store className="h-10 w-10 mx-auto mb-4 text-gray-400" />
+          <p className="text-lg font-medium text-gray-600 mb-2">No shops found</p>
+          <p className="text-gray-500">Be the first one to create a shop and showcase your handmade or vintage products!</p>
         </div>
       </div>
     );
@@ -58,7 +60,13 @@ const FeaturedShops = () => {
   
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-bold mb-6 text-messaging-primary">Featured Sellers</h2>
+      <div className="flex items-center gap-2 mb-6">
+        <Award className="h-6 w-6 text-messaging-primary" />
+        <h2 className="text-2xl font-bold text-messaging-primary">Featured Sellers</h2>
+        <span className="text-sm bg-messaging-accent/10 text-messaging-accent px-2 py-0.5 rounded-full flex items-center ml-2">
+          <TrendingUp className="h-3.5 w-3.5 mr-1" /> Trending
+        </span>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sellers.map((seller) => (
           <ShopOverview key={seller.id} seller={seller} />

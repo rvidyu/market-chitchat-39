@@ -61,7 +61,7 @@ const ShopOverview = ({ seller }: ShopOverviewProps) => {
         </div>
       </CardContent>
       
-      <CardFooter className="flex justify-center pb-6">
+      <CardFooter className="flex justify-between pb-6 gap-2">
         <Button 
           onClick={visitShop}
           className={`w-full transition-all ${isHovered ? 'bg-messaging-accent' : 'bg-messaging-primary'}`}

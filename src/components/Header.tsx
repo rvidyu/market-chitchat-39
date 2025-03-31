@@ -35,16 +35,6 @@ const Header = () => {
                   <Store className="mr-1 h-4 w-4" /> My Shop
                 </Link>
               )}
-              {user.role === "buyer" && (
-                <div className="flex space-x-4">
-                  <Link to="/shop/seller-1" className="text-messaging-primary hover:text-messaging-accent flex items-center">
-                    <Store className="mr-1 h-4 w-4" /> Crafty Creations
-                  </Link>
-                  <Link to="/shop/seller-2" className="text-messaging-primary hover:text-messaging-accent flex items-center">
-                    <Store className="mr-1 h-4 w-4" /> Vintage Treasures
-                  </Link>
-                </div>
-              )}
             </nav>
           )}
           
@@ -87,22 +77,6 @@ const Header = () => {
                       <span>My Shop</span>
                     </Link>
                   </DropdownMenuItem>
-                )}
-                {user.role === "buyer" && (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link to="/shop/seller-1" className="flex items-center w-full cursor-pointer">
-                        <Store className="mr-2 h-4 w-4" />
-                        <span>Visit Crafty Creations</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/shop/seller-2" className="flex items-center w-full cursor-pointer">
-                        <Store className="mr-2 h-4 w-4" />
-                        <span>Visit Vintage Treasures</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
                 )}
                 {user.role && (
                   <DropdownMenuItem className="flex items-center">

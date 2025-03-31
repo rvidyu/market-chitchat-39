@@ -8,11 +8,12 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <main className="container mx-auto p-4">
-        <div className="mb-10">
-          <FeaturedShops />
+      <main className="container mx-auto p-4 py-8">
+        <FeaturedShops />
+        
+        <div className="mt-12">
+          <Messaging />
         </div>
-        <Messaging />
       </main>
     </div>
   );
