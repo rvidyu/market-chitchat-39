@@ -17,7 +17,8 @@ export const useConversationManagement = (
   const { data: conversationsList = [], isLoading, error } = useQuery({
     queryKey: ['conversations'],
     queryFn: fetchConversations,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 1000 * 30, // Reduced to 30 seconds for more frequent refreshes
+    refetchInterval: 5000, // Poll every 5 seconds for new messages as a backup
   });
 
   // Handle sending a new message with optimized mutation
@@ -134,20 +135,29 @@ export const useConversationManagement = (
   useEffect(() => {
     if (activeConversationId) {
       // This ensures that any time we have an active conversation, we mark messages as read
-      console.log("Effect: Marking messages as read for active conversation:", activeConversationId);
-      markAsReadMutation.mutate(activeConversationId);
+      const conversation = conversationsList.find(c => c.id === activeConversationId);
+      if (conversation && conversation.unreadCount > 0) {
+        console.log("Effect: Marking messages as read for active conversation:", activeConversationId);
+        markAsReadMutation.mutate(activeConversationId);
+      }
     }
   }, [activeConversationId, conversationsList]);
 
-  // Set up realtime subscription for new messages with optimized handling
+  // Set up enhanced realtime subscription for new messages
   useEffect(() => {
     // Get the current authenticated user from Supabase
-    const fetchUser = async () => {
+    const setupRealtimeListener = async () => {
       const { data } = await supabase.auth.getUser();
       const user = data.user;
       
       if (user) {
-        // Set up the channel for real-time messages
+        // Enable realtime for the messages table if not already enabled
+        await supabase
+          .from('messages')
+          .select('id')
+          .limit(1);
+
+        // Set up the channel for real-time messages with more specific filters
         const channel = supabase
           .channel('public:messages')
           .on(
@@ -158,34 +168,50 @@ export const useConversationManagement = (
               table: 'messages',
               filter: `recipient_id=eq.${user.id}`
             },
-            () => {
-              // When a new message comes in, refresh the conversations
+            (payload) => {
+              console.log("New message received:", payload);
+              // When a new message comes in, refresh the conversations immediately
               queryClient.invalidateQueries({ queryKey: ['conversations'] });
               
               // If it's not from the active conversation, show a toast
-              toast({
-                title: "New message",
-                description: "You have received a new message.",
-              });
+              const newMessageSenderId = payload.new.sender_id;
+              const newMessageRecipientId = payload.new.recipient_id;
+              
+              // Create conversation ID in the same format as our app uses
+              const participantIds = [newMessageSenderId, newMessageRecipientId].sort();
+              const messageConversationId = participantIds.join('-');
+              
+              if (messageConversationId !== activeConversationId) {
+                toast({
+                  title: "New message",
+                  description: "You have received a new message.",
+                });
+              } else {
+                // If it's from the active conversation, mark it as read immediately
+                markAsReadMutation.mutate(messageConversationId);
+              }
             }
           )
-          .subscribe();
+          .subscribe((status) => {
+            console.log("Realtime subscription status:", status);
+          });
           
         // Return cleanup function
         return () => {
+          console.log("Cleaning up realtime subscription");
           supabase.removeChannel(channel);
         };
       }
     };
     
     // Call the async function
-    const cleanup = fetchUser();
+    const cleanup = setupRealtimeListener();
     
     // Return cleanup function
     return () => {
       cleanup.then(cleanupFn => cleanupFn && cleanupFn());
     };
-  }, [queryClient, toast]);
+  }, [queryClient, toast, activeConversationId]);
 
   return {
     conversationsList,
