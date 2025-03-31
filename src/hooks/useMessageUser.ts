@@ -8,18 +8,13 @@ interface MessageUserData {
 }
 
 // Global cache for user profiles to reduce redundant database queries
-// Using a more efficient structure with longer expiry time
 const userProfileCache: Record<string, { name: string; timestamp: number }> = {};
 const CACHE_EXPIRY = 30 * 60 * 1000; // 30 minutes cache expiry
 
-/**
- * Custom hook to fetch and determine message user information
- * With enhanced caching to improve performance
- */
 export const useMessageUser = (senderId: string) => {
   const [userData, setUserData] = useState<MessageUserData>({
     isCurrentUser: false,
-    senderName: "User",
+    senderName: "",  // Changed from "User" to an empty string
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -71,7 +66,7 @@ export const useMessageUser = (senderId: string) => {
           if (isMounted) {
             setUserData({
               isCurrentUser,
-              senderName: cachedProfile.name
+              senderName: cachedProfile.name || `User ${senderId.substring(0, 5)}`
             });
             setIsLoading(false);
           }
@@ -89,7 +84,7 @@ export const useMessageUser = (senderId: string) => {
         
         if (profileError) {
           console.error("Error fetching profile:", profileError);
-          const fallbackName = `User ${senderId.substring(0, 5)}`;
+          const fallbackName = senderId.substring(0, 5);
           userProfileCache[senderId] = {
             name: fallbackName,
             timestamp: now
@@ -111,7 +106,7 @@ export const useMessageUser = (senderId: string) => {
           });
         } else {
           // Fallback for when profile doesn't exist or name is null
-          const fallbackName = `User ${senderId.substring(0, 5)}`;
+          const fallbackName = senderId.substring(0, 5);
           
           // Cache the fallback name too to prevent repeated lookups
           userProfileCache[senderId] = {
@@ -130,7 +125,7 @@ export const useMessageUser = (senderId: string) => {
           setError(error instanceof Error ? error : new Error(String(error)));
           setUserData({
             isCurrentUser: false,
-            senderName: "User"
+            senderName: senderId.substring(0, 5)
           });
         }
       } finally {
@@ -150,3 +145,4 @@ export const useMessageUser = (senderId: string) => {
 
   return { ...userData, isLoading, error };
 };
+
