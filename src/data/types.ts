@@ -27,6 +27,6 @@ export interface Conversation {
   id: string;
   participants: User[];
   messages: Message[];
-  lastActivity: string;
+  lastActivity: string; // Make sure this is a string to match the timestamp format
   unreadCount: number;
 }
