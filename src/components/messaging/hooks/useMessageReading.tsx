@@ -1,31 +1,39 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { markMessagesAsRead } from "@/data/api";
+import { useToast } from "@/hooks/use-toast";
+import { markMessagesAsRead } from "@/data/api/readStatusApi";
 
 export const useMessageReading = () => {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Handle marking messages as read
+  // Set up mutation for marking messages as read
   const markAsReadMutation = useMutation({
     mutationFn: markMessagesAsRead,
     onSuccess: () => {
-      // Use focused invalidation to only update the needed data
+      // After successfully marking messages as read, invalidate the conversations query
+      // to refresh the data and update unread counts
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error) => {
       console.error("Error marking messages as read:", error);
-    }
+      toast({
+        title: "Error",
+        description: "Failed to mark messages as read.",
+        variant: "destructive",
+      });
+    },
   });
 
+  // Function to handle marking messages as read in a conversation
   const handleMarkMessagesAsRead = (conversationId: string) => {
     if (!conversationId) return;
     
-    console.log("Marking messages as read for conversation:", conversationId);
     markAsReadMutation.mutate(conversationId);
   };
 
   return {
     handleMarkMessagesAsRead,
-    isMarkingAsRead: markAsReadMutation.isPending
+    isMarking: markAsReadMutation.isPending
   };
 };
