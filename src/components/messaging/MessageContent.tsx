@@ -19,10 +19,7 @@ export default function MessageContent({
   isLoading
 }: MessageContentProps) {
   return (
-    <div className={cn(
-      "flex flex-col",
-      isCurrentUser ? "items-end" : "items-start"
-    )}>
+    <div className="flex flex-col">
       {/* Product Card (if any) */}
       {message.product && (
         <ProductMessageCard product={message.product} />

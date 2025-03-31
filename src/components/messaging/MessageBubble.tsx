@@ -17,7 +17,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   return (
     <div className={cn(
       "flex items-start gap-2 mb-4",
-      isCurrentUser ? "flex-row-reverse" : "",
+      isCurrentUser ? "flex-row-reverse" : "flex-row",
     )}>
       {/* Avatar with user profile image or fallback */}
       <MessageAvatar 
@@ -26,9 +26,15 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         senderName={senderName}
       />
       
-      <div className="flex flex-col max-w-[80%]">
+      <div className={cn(
+        "flex flex-col max-w-[80%]",
+        isCurrentUser ? "items-end" : "items-start"
+      )}>
         {/* Only show timestamp */}
-        <div className="flex items-center mb-1">
+        <div className={cn(
+          "flex mb-1",
+          isCurrentUser ? "justify-end" : "justify-start"
+        )}>
           <span className="text-xs text-messaging-muted">
             {formatTimestamp(message.timestamp)}
           </span>
