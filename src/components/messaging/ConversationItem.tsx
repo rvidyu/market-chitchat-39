@@ -72,7 +72,7 @@ export default function ConversationItem({
           )}>
             {otherParticipant.name}
             {isSpam && (
-              <Badge variant="destructive" className="ml-2">
+              <Badge variant="destructive" className="ml-2 bg-red-500">
                 <Flag className="h-3 w-3 mr-1" /> Spam
               </Badge>
             )}
@@ -103,12 +103,12 @@ export default function ConversationItem({
       
       {isSpam && onMarkNotSpam && (
         <Button 
-          variant="ghost" 
+          variant="outline" 
           size="sm"
-          className="absolute top-0 right-0 m-1 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
           onClick={handleMarkNotSpam}
         >
-          <CheckCircle className="h-3 w-3 mr-1" />
+          <CheckCircle className="h-4 w-4 mr-1" />
           Not spam
         </Button>
       )}

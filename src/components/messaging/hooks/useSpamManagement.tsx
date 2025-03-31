@@ -25,6 +25,14 @@ export const useSpamManagement = ({ onNotSpamMarked }: UseSpamManagementProps = 
     setTimeout(() => {
       setShowSpamNotification(false);
     }, 8000);
+    
+    // Show toast
+    toast({
+      title: "Message reported as spam",
+      description: "This conversation has been moved to your spam folder",
+      variant: "default",
+      className: "border-red-200",
+    });
   };
   
   // Handle undoing spam report
@@ -36,6 +44,8 @@ export const useSpamManagement = ({ onNotSpamMarked }: UseSpamManagementProps = 
       toast({
         title: "Spam report undone",
         description: "The conversation has been restored to your inbox.",
+        variant: "default",
+        className: "border-green-200",
       });
     }
   };
@@ -43,6 +53,13 @@ export const useSpamManagement = ({ onNotSpamMarked }: UseSpamManagementProps = 
   // Handle marking a conversation as not spam
   const handleMarkNotSpam = (conversationId: string) => {
     setSpamConversations(spamConversations.filter(id => id !== conversationId));
+    
+    toast({
+      title: "Marked as not spam",
+      description: "The conversation has been moved back to your inbox.",
+      variant: "default", 
+      className: "border-green-200",
+    });
     
     // Call the callback if provided
     if (onNotSpamMarked) {

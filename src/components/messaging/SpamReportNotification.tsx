@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Flag, Undo, Check, X } from "lucide-react";
+import { Flag, Undo, X } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface SpamReportNotificationProps {
@@ -29,8 +29,8 @@ const SpamReportNotification = ({ onUndo }: SpamReportNotificationProps) => {
       `}
     >
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center">
-          <div className="bg-white bg-opacity-20 rounded-full p-1.5 mr-3">
+        <div className="flex items-center space-x-3">
+          <div className="bg-white bg-opacity-20 rounded-full p-1.5">
             <Flag className="h-4 w-4" />
           </div>
           <div className="flex flex-col">
@@ -43,17 +43,25 @@ const SpamReportNotification = ({ onUndo }: SpamReportNotificationProps) => {
           </div>
         </div>
         
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={(e) => {
-            e.preventDefault();
-            onUndo();
-          }}
-          className="text-white hover:bg-white hover:bg-opacity-20 px-3 h-8 ml-2"
-        >
-          <Undo className="h-3.5 w-3.5 mr-1.5" /> Undo
-        </Button>
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onUndo}
+            className="text-white hover:bg-white hover:bg-opacity-20 px-3 h-8"
+          >
+            <Undo className="h-3.5 w-3.5 mr-1.5" /> Undo
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsClosing(true)}
+            className="text-white hover:bg-white hover:bg-opacity-20 p-1 h-8 w-8 ml-1"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </Alert>
   );
