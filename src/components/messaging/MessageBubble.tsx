@@ -107,13 +107,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           {/* Image Attachments (if any) */}
           {message.images && message.images.length > 0 && (
             <div className="mt-2">
-              {message.images.map((imageUrl, index) => (
-                <MessageImageAttachment 
-                  key={index} 
-                  imageUrl={imageUrl} 
-                  altText={`Image ${index+1}`} 
-                />
-              ))}
+              <MessageImageAttachment images={message.images} />
             </div>
           )}
           
