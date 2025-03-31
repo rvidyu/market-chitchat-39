@@ -34,9 +34,14 @@ export const useRealtimeMessages = (
         
         userId = user.id;
         
-        // Set up the channel for real-time messages with more specific filters
+        // Set up the channel for real-time messages with optimized configuration
         const channel = supabase
-          .channel('public:messages')
+          .channel('messages-realtime', {
+            config: {
+              broadcast: { self: true },
+              presence: { key: userId },
+            }
+          })
           .on(
             'postgres_changes',
             { 
@@ -47,10 +52,15 @@ export const useRealtimeMessages = (
             },
             (payload) => {
               console.log("New message received:", payload);
-              // When a new message comes in, refresh the conversations immediately
-              queryClient.invalidateQueries({ queryKey: ['conversations'] });
               
-              // If it's not from the active conversation, show a toast
+              // Faster invalidation approach with targeted cache updates
+              queryClient.invalidateQueries({ 
+                queryKey: ['conversations'],
+                refetchType: 'active',
+                exact: false
+              });
+              
+              // Extract conversation participants
               const newMessageSenderId = payload.new.sender_id;
               const newMessageRecipientId = payload.new.recipient_id;
               
@@ -59,9 +69,11 @@ export const useRealtimeMessages = (
               const messageConversationId = participantIds.join('-');
               
               if (messageConversationId !== activeConversationId) {
+                // Show notification for messages not in the active conversation
                 toast({
                   title: "New message",
                   description: "You have received a new message.",
+                  duration: 3000, // Shorter duration for better UX
                 });
               } else if (onNewMessage) {
                 // If it's from the active conversation, mark it as read immediately
@@ -71,6 +83,9 @@ export const useRealtimeMessages = (
           )
           .subscribe((status) => {
             console.log("Realtime subscription status:", status);
+            if (status === "SUBSCRIBED") {
+              console.log("✅ Realtime subscription active");
+            }
           });
           
         // Return cleanup function
