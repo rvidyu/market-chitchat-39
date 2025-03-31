@@ -38,14 +38,14 @@ export const useSpamManagement = ({ onNotSpamMarked }: UseSpamManagementProps = 
         return;
       }
       
-      // Add to blocked users table - using raw SQL query to avoid type issues
-      const { error: blockError } = await supabase.rpc(
+      // Add to blocked users table - correctly typing the RPC call
+      const { error: blockError } = await (supabase.rpc(
         'block_user',
         { 
           blocker: currentUserId, 
           blocked: otherUserId 
-        } as any // Use type assertion to bypass TypeScript checking
-      );
+        }
+      ) as any);
       
       if (blockError) {
         console.error("Error blocking user:", blockError);
@@ -86,14 +86,14 @@ export const useSpamManagement = ({ onNotSpamMarked }: UseSpamManagementProps = 
         
         if (!otherUserId) return;
         
-        // Remove from blocked users table - using raw SQL query to avoid type issues
-        const { error: unblockError } = await supabase.rpc(
+        // Remove from blocked users table - correctly typing the RPC call
+        const { error: unblockError } = await (supabase.rpc(
           'unblock_user',
           { 
             blocker: currentUserId, 
             blocked: otherUserId 
-          } as any // Use type assertion to bypass TypeScript checking
-        );
+          }
+        ) as any);
         
         if (unblockError) {
           console.error("Error unblocking user:", unblockError);
@@ -132,14 +132,14 @@ export const useSpamManagement = ({ onNotSpamMarked }: UseSpamManagementProps = 
       
       if (!otherUserId) return;
       
-      // Remove from blocked users table - using raw SQL query to avoid type issues
-      const { error: unblockError } = await supabase.rpc(
+      // Remove from blocked users table - correctly typing the RPC call
+      const { error: unblockError } = await (supabase.rpc(
         'unblock_user',
         { 
           blocker: currentUserId, 
           blocked: otherUserId 
-        } as any // Use type assertion to bypass TypeScript checking
-      );
+        }
+      ) as any);
       
       if (unblockError) {
         console.error("Error unblocking user:", unblockError);
