@@ -43,7 +43,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            {/* Make seller shop public by removing the ProtectedRoute wrapper */}
+            {/* Public route for viewing seller shops */}
             <Route path="/shop/:sellerId" element={<SellerShop />} />
             <Route 
               path="/chat" 

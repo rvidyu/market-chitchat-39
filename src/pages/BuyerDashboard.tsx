@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import FeaturedShops from "@/components/shop/FeaturedShops";
+import RecentProducts from "@/components/shop/RecentProducts";
 import { useAuth } from "@/contexts/auth";
-import { ShoppingBag, Clock } from "lucide-react";
+import { ShoppingBag, Clock, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const BuyerDashboard = () => {
@@ -63,7 +64,7 @@ const BuyerDashboard = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center">
-                <ShoppingBag className="h-5 w-5 mr-2 text-messaging-secondary" />
+                <Star className="h-5 w-5 mr-2 text-messaging-secondary" />
                 Recommended For You
               </CardTitle>
             </CardHeader>
@@ -75,6 +76,10 @@ const BuyerDashboard = () => {
 
         <div className="my-8">
           <FeaturedShops />
+        </div>
+
+        <div className="my-8">
+          <RecentProducts />
         </div>
       </div>
     </div>
