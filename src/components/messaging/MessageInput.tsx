@@ -1,23 +1,33 @@
 
-import { useState, FormEvent, useRef } from "react";
+import { useState, FormEvent, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Image as ImageIcon } from "lucide-react";
+import { Send, Image as ImageIcon, AlertTriangle } from "lucide-react";
 import QuickReplySelector from "./QuickReplySelector";
 import ImageUploader from "./ImageUploader";
 
 interface MessageInputProps {
   onSendMessage: (text: string, images?: File[]) => void;
   placeholder?: string;
+  isBlocked?: boolean;
 }
 
-export default function MessageInput({ onSendMessage, placeholder = "Type a message..." }: MessageInputProps) {
+export default function MessageInput({ 
+  onSendMessage, 
+  placeholder = "Type a message...", 
+  isBlocked = false 
+}: MessageInputProps) {
   const [message, setMessage] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [showImageUploader, setShowImageUploader] = useState(false);
   
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    
+    if (isBlocked) {
+      return; // Don't allow sending if blocked
+    }
+    
     if (message.trim() || images.length > 0) {
       onSendMessage(message, images);
       setMessage("");
@@ -35,8 +45,20 @@ export default function MessageInput({ onSendMessage, placeholder = "Type a mess
   };
   
   const toggleImageUploader = () => {
+    if (isBlocked) return; // Don't allow toggling if blocked
     setShowImageUploader(prev => !prev);
   };
+  
+  if (isBlocked) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="bg-red-50 border border-red-200 rounded-md p-3 text-red-700 flex items-center">
+          <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
+          <span>You can't message this user because they've been reported for spam.</span>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">

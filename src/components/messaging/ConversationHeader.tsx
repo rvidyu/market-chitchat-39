@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Flag, MoreVertical } from "lucide-react";
+import { Flag, MoreVertical, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,35 +15,33 @@ interface ConversationHeaderProps {
   participants: User[];
   onReportSpam?: (conversationId: string) => void;
   conversationId: string;
+  isBlocked?: boolean;
 }
 
 export default function ConversationHeader({ 
   participants, 
   onReportSpam,
-  conversationId
+  conversationId,
+  isBlocked = false
 }: ConversationHeaderProps) {
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [otherUserName, setOtherUserName] = useState<string>("User");
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  // Get current user ID and other participant's info
   useEffect(() => {
     const fetchData = async () => {
       setIsLoadingProfile(true);
       try {
-        // Get current user ID
         const { data: userData } = await supabase.auth.getUser();
         if (userData.user) {
           setCurrentUserId(userData.user.id);
           
-          // Find the other participant
           const otherParticipant = participants.find(
             p => p.id !== userData.user.id
           );
           
           if (otherParticipant) {
-            // Check if we have cached profile data
             const cacheKey = `profile_${otherParticipant.id}`;
             const cachedProfile = sessionStorage.getItem(cacheKey);
             
@@ -52,7 +49,6 @@ export default function ConversationHeader({
               const profileData = JSON.parse(cachedProfile);
               setOtherUserName(profileData.name || `User ${otherParticipant.id.substring(0, 8)}`);
             } else {
-              // Fetch their profile
               const { data: profileData, error } = await supabase
                 .from('profiles')
                 .select('name')
@@ -63,14 +59,11 @@ export default function ConversationHeader({
                 console.error("Error fetching other user profile:", error);
                 setOtherUserName(`User ${otherParticipant.id.substring(0, 8)}`);
               } else if (profileData) {
-                // Use full name from profile
                 setOtherUserName(profileData.name || `User ${otherParticipant.id.substring(0, 4)}`);
-                // Cache the profile data
                 sessionStorage.setItem(cacheKey, JSON.stringify(profileData));
               }
             }
             
-            // Check if we have cached avatar URL
             const avatarCacheKey = `avatar_${otherParticipant.id}`;
             const cachedAvatarUrl = sessionStorage.getItem(avatarCacheKey);
             
@@ -79,14 +72,12 @@ export default function ConversationHeader({
                 setAvatarUrl(cachedAvatarUrl);
               }
             } else {
-              // Fetch avatar
               const { data: publicUrl } = supabase
                 .storage
                 .from('avatars')
                 .getPublicUrl(`${otherParticipant.id}/avatar`);
               
               if (publicUrl?.publicUrl) {
-                // Check if the file exists by making a HEAD request
                 try {
                   const response = await fetch(publicUrl.publicUrl, { method: 'HEAD' });
                   if (response.ok) {
@@ -114,12 +105,10 @@ export default function ConversationHeader({
     fetchData();
   }, [participants]);
 
-  // Find the other participant (not the current user)
   const otherParticipant = participants.find(
     (p) => p.id !== currentUserId
   );
 
-  // Generate initials for avatar fallback
   const getInitials = () => {
     if (!otherUserName) return "U";
     return otherUserName.split(" ")
@@ -150,16 +139,20 @@ export default function ConversationHeader({
           )}
         </Avatar>
         <div>
-          <h3 className="font-semibold">
-            {isLoadingProfile ? "Loading..." : otherUserName}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold">
+              {isLoadingProfile ? "Loading..." : otherUserName}
+            </h3>
+            {isBlocked && (
+              <ShieldAlert className="h-4 w-4 text-red-500" title="Blocked for spam" />
+            )}
+          </div>
           <p className="text-sm text-messaging-muted">
-            {otherParticipant.isOnline ? "Online" : "Offline"}
+            {isBlocked ? "Blocked" : otherParticipant.isOnline ? "Online" : "Offline"}
           </p>
         </div>
       </div>
       
-      {/* Report Dropdown Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -167,13 +160,15 @@ export default function ConversationHeader({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem 
-            onClick={handleReportSpam}
-            className="text-red-600 cursor-pointer"
-          >
-            <Flag className="h-4 w-4 mr-2" />
-            Report as spam
-          </DropdownMenuItem>
+          {!isBlocked && (
+            <DropdownMenuItem 
+              onClick={handleReportSpam}
+              className="text-red-600 cursor-pointer"
+            >
+              <Flag className="h-4 w-4 mr-2" />
+              Report as spam
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
