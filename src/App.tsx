@@ -43,14 +43,8 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/shop/:sellerId" 
-              element={
-                <ProtectedRoute>
-                  <SellerShop />
-                </ProtectedRoute>
-              } 
-            />
+            {/* Make seller shop public by removing the ProtectedRoute wrapper */}
+            <Route path="/shop/:sellerId" element={<SellerShop />} />
             <Route 
               path="/chat" 
               element={

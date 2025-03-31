@@ -116,14 +116,14 @@ export const useShopData = (sellerId?: string) => {
             setProducts(allProducts);
           } else {
             console.error(`Seller with ID ${targetSellerId} not found`);
-            // If seller not found, redirect to home
-            navigate("/");
-            return;
+            // If seller not found, show not found UI but don't redirect
+            setShopData(null);
+            setProducts([]);
           }
         } else {
           // No sellerId and not logged in - show error
-          navigate("/");
-          return;
+          setShopData(null);
+          setProducts([]);
         }
       }
       

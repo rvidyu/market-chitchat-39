@@ -6,6 +6,7 @@ import { SellerData } from "@/data/sellers";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/auth";
 
 interface ShopOverviewProps {
   seller: SellerData;
@@ -14,9 +15,19 @@ interface ShopOverviewProps {
 const ShopOverview = ({ seller }: ShopOverviewProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const visitShop = () => {
     navigate(`/shop/${seller.id}`);
+  };
+
+  const startChat = () => {
+    if (user) {
+      navigate(`/chat/${seller.id}`);
+    } else {
+      // Redirect to login if not authenticated
+      navigate('/login');
+    }
   };
 
   return (
@@ -64,10 +75,19 @@ const ShopOverview = ({ seller }: ShopOverviewProps) => {
       <CardFooter className="flex justify-between pb-6 gap-2">
         <Button 
           onClick={visitShop}
-          className={`w-full transition-all ${isHovered ? 'bg-messaging-accent' : 'bg-messaging-primary'}`}
+          className={`flex-1 transition-all ${isHovered ? 'bg-messaging-accent' : 'bg-messaging-primary'}`}
         >
           <Store className="mr-2 h-4 w-4" /> 
           Visit Shop
+        </Button>
+        
+        <Button 
+          onClick={startChat}
+          variant="outline"
+          className="flex-1"
+        >
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Contact
         </Button>
       </CardFooter>
     </Card>
