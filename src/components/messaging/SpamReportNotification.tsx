@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Undo, X, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Undo, X, ShieldAlert } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface SpamReportNotificationProps {
