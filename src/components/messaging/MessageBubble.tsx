@@ -1,3 +1,4 @@
+
 import { Message } from "@/data/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MessageImageAttachment from "./MessageImageAttachment";
@@ -58,7 +59,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   const hasContent = message.text.trim().length > 0;
   const hasImages = message.images && message.images.length > 0;
 
-  // Generate initials for avatar fallback
+  // Generate initials for avatar fallback - improved for better display
   const getInitials = (name: string) => {
     if (!name) return "U";
     return name.split(" ")
@@ -76,7 +77,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       {!isCurrentUser && (
         <Avatar className="h-8 w-8">
           <AvatarImage src={senderAvatar} alt={senderName} />
-          <AvatarFallback className="bg-purple-100 text-purple-500">
+          <AvatarFallback className="bg-purple-200 text-purple-600 font-medium">
             {getInitials(senderName)}
           </AvatarFallback>
         </Avatar>
