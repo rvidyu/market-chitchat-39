@@ -17,15 +17,33 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
     }
     
     // Parse the conversation ID to get the participant IDs
+    // Handle different formats of conversation IDs (including those with multiple hyphens)
     const participantIds = conversationId.split('-');
     
-    if (participantIds.length !== 2) {
+    if (participantIds.length < 2) {
       console.error('Invalid conversation ID format:', conversationId);
       throw new Error('Invalid conversation ID format');
     }
     
-    // Get the other participant's ID
-    const otherParticipantId = participantIds[0] === user.id ? participantIds[1] : participantIds[0];
+    // Extract the IDs properly by accounting for UUIDs that themselves contain hyphens
+    // If we have multiple hyphens, extract the other participant based on the user's own ID
+    
+    // Find all UUIDs in the conversation ID
+    const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+    const uuids = conversationId.match(uuidRegex);
+    
+    if (!uuids || uuids.length < 2) {
+      console.error('Could not extract UUIDs from conversation ID:', conversationId);
+      throw new Error('Invalid conversation ID format');
+    }
+    
+    // Get the other participant's ID (the one that is not the current user's ID)
+    const otherParticipantId = uuids.find(id => id !== user.id);
+    
+    if (!otherParticipantId) {
+      console.error('Could not find other participant ID in conversation:', conversationId);
+      throw new Error('Invalid conversation participants');
+    }
     
     console.log('Marking messages as read. Current user:', user.id, 'Other participant:', otherParticipantId);
     

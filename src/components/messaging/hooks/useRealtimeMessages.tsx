@@ -57,7 +57,13 @@ export const useRealtimeMessages = (
               const participantIds = [newMessageSenderId, newMessageRecipientId].sort();
               const messageConversationId = participantIds.join('-');
               
-              if (messageConversationId !== activeConversationId) {
+              // Check if the message belongs to the active conversation
+              // Use a more flexible approach to check if the active conversation contains both participants
+              const belongsToActiveConversation = activeConversationId && 
+                activeConversationId.includes(newMessageSenderId) && 
+                activeConversationId.includes(newMessageRecipientId);
+              
+              if (!belongsToActiveConversation) {
                 // Show notification for messages not in the active conversation
                 toast({
                   title: "New message",

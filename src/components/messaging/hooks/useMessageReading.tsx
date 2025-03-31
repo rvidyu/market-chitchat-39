@@ -33,18 +33,7 @@ export const useMessageReading = () => {
       return;
     }
     
-    // Check if the conversationId has the correct format
-    const parts = conversationId.split('-');
-    if (parts.length !== 2) {
-      console.error("Invalid conversation ID format:", conversationId);
-      toast({
-        title: "Error",
-        description: "Invalid conversation format. Please refresh the page.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+    // Don't validate the format - let the API handle it
     console.log("Marking messages as read for conversation:", conversationId);
     markAsReadMutation.mutate(conversationId);
   };
