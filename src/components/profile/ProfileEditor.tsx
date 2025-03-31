@@ -112,7 +112,17 @@ const ProfileEditor = () => {
             contentType: avatarFile.type 
           });
         
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Error uploading avatar:", uploadError);
+          // Continue execution even if avatar upload fails
+          toast({
+            variant: "warning",
+            title: "Profile partially updated",
+            description: "Your profile was updated, but there was an issue uploading your avatar image."
+          });
+          setIsLoading(false);
+          return;
+        }
         
         // Get the public URL for future use
         const { data: publicUrlData } = supabase.storage
