@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth";
@@ -11,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { Product } from "@/data/products";
 import { SellerData } from "@/data/sellers";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ContactSellerButtonProps {
   product: Product;
@@ -27,6 +29,7 @@ const ContactSellerButton = ({ product, seller, variant = "button" }: ContactSel
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const form = useForm<ContactFormValues>({
     defaultValues: {
@@ -49,6 +52,10 @@ const ContactSellerButton = ({ product, seller, variant = "button" }: ContactSel
     setIsLoading(true);
     
     try {
+      // Generate conversation ID (sort IDs to ensure consistency)
+      const participantIds = [user.id, seller.id].sort();
+      const conversationId = participantIds.join('-');
+      
       // Create a new message in the database
       const { error } = await supabase.from('messages').insert({
         sender_id: user.id,
@@ -65,10 +72,25 @@ const ContactSellerButton = ({ product, seller, variant = "button" }: ContactSel
         throw error;
       }
       
-      // Removed success toast notification
+      // Also update conversations table to ensure the conversation appears
+      await supabase.from('conversations').upsert({
+        sender_id: user.id,
+        recipient_id: seller.id,
+        text: data.message,
+        timestamp: new Date().toISOString(),
+        is_read: false,
+        conversation_id: conversationId
+      }, { onConflict: 'conversation_id' });
       
-      // Navigate to chat
-      navigate(`/chat/${seller.id}/${product.id}`);
+      // Invalidate conversations query to refresh data
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      
+      // Navigate to chat with the conversation already selected
+      navigate(`/chat`, { 
+        state: { 
+          conversationId: conversationId
+        } 
+      });
       
     } catch (error: any) {
       console.error("Error sending message:", error);

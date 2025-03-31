@@ -16,6 +16,10 @@ export const sendMessage = async (
       throw new Error('User not authenticated');
     }
     
+    // Create a unique conversation ID from the two user IDs (sorted)
+    const participantIds = [user.id, recipientId].sort();
+    const conversationId = participantIds.join('-');
+    
     // Prepare the message data
     const messageData = {
       sender_id: user.id,
@@ -47,17 +51,23 @@ export const sendMessage = async (
       throw new Error('Failed to create message');
     }
     
-    // Create a unique conversation ID from the two user IDs (sorted)
-    const participantIds = [user.id, recipientId].sort();
-    const conversationId = participantIds.join('-');
+    // Also update conversations table to ensure the conversation appears in the list
+    await supabase.from('conversations').upsert({
+      sender_id: user.id,
+      recipient_id: recipientId,
+      text: text,
+      timestamp: new Date().toISOString(),
+      is_read: false,
+      conversation_id: conversationId
+    }, { onConflict: 'conversation_id' });
     
     // Return the created message
     return {
       id: newMessage.id,
-      conversationId: conversationId, // Make sure conversationId is included and required
+      conversationId: conversationId,
       senderId: newMessage.sender_id,
       text: newMessage.text,
-      timestamp: newMessage.timestamp, // Keep as string to match the type
+      timestamp: newMessage.timestamp,
       isRead: newMessage.is_read,
       images: newMessage.images,
       product: product

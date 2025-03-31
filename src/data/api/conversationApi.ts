@@ -10,7 +10,7 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
       throw new Error('User not authenticated');
     }
     
-    // Use a more efficient query with JOIN operations to reduce database roundtrips
+    // First, fetch all conversations where the user is either sender or recipient
     const { data: conversations, error } = await supabase
       .from('conversations')
       .select(`
@@ -76,7 +76,7 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
           ],
           messages: (messages || []).map(msg => ({
             id: msg.id,
-            conversationId: conversationId,
+            conversationId: conversationId, // Make sure conversationId is included
             senderId: msg.sender_id,
             text: msg.text,
             timestamp: msg.timestamp,
@@ -98,6 +98,8 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
         conversationsMap.set(conversationId, conversation);
       }
     }
+    
+    console.log(`Fetched ${conversationsMap.size} conversations for user ${user.id}`);
     
     // Convert the map to an array and sort by last activity
     return Array.from(conversationsMap.values())
