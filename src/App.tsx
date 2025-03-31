@@ -54,6 +54,14 @@ const App = () => (
               } 
             />
             <Route 
+              path="/chat/:sellerId" 
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/chat/:sellerId/:productId" 
               element={
                 <ProtectedRoute>

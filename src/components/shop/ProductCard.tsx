@@ -6,6 +6,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/auth";
+import { toast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
   product: Product;
@@ -16,6 +18,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const [seller, setSeller] = useState<SellerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   useEffect(() => {
     const loadSeller = async () => {
@@ -34,6 +37,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
   }, [product.sellerId]);
   
   const handleMessageClick = () => {
+    if (!user) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to contact sellers",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+    
     if (seller) {
       navigate(`/chat/${seller.id}/${product.id}`, {
         state: {
@@ -55,7 +68,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         />
         {product.stock <= 3 && (
           <span className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-            Only {product.stock} left!
+            {product.stock === 1 ? "Only 1 left!" : `Only ${product.stock} left!`}
           </span>
         )}
       </div>
@@ -72,15 +85,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <ShoppingCart className="h-4 w-4 mr-2" /> Add
           </Button>
           
-          {seller && !isLoading && (
-            <Button 
-              variant="outline" 
-              className="border-messaging-primary text-messaging-primary hover:bg-messaging-primary/10"
-              onClick={handleMessageClick}
-            >
-              <MessageSquare className="h-4 w-4 mr-2" /> Message
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            className="border-messaging-primary text-messaging-primary hover:bg-messaging-primary/10"
+            onClick={handleMessageClick}
+            disabled={isLoading}
+          >
+            <MessageSquare className="h-4 w-4 mr-2" /> Contact
+          </Button>
         </div>
       </CardFooter>
     </Card>
