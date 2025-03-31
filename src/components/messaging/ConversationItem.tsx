@@ -26,6 +26,7 @@ export default function ConversationItem({
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [otherUserName, setOtherUserName] = useState<string>("User");
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchUserData = async () => {
@@ -47,7 +48,7 @@ export default function ConversationItem({
               .from('profiles')
               .select('name')
               .eq('id', otherParticipantId)
-              .single();
+              .maybeSingle();
               
             if (error) {
               console.error("Error fetching other user profile:", error);
@@ -55,6 +56,24 @@ export default function ConversationItem({
             } else if (profileData) {
               // Use the full name from profile
               setOtherUserName(profileData.name || `User ${otherParticipantId.substring(0, 4)}`);
+            }
+            
+            // Fetch avatar
+            const { data: avatarData } = supabase
+              .storage
+              .from('avatars')
+              .getPublicUrl(`${otherParticipantId}/avatar`);
+              
+            if (avatarData?.publicUrl) {
+              // Check if the avatar exists with a HEAD request
+              try {
+                const response = await fetch(avatarData.publicUrl, { method: 'HEAD' });
+                if (response.ok) {
+                  setAvatarUrl(avatarData.publicUrl);
+                }
+              } catch (error) {
+                console.error('Error checking avatar existence:', error);
+              }
             }
           }
         }
@@ -109,7 +128,7 @@ export default function ConversationItem({
           "h-12 w-12 ring-2 ring-offset-2",
           isActive ? "ring-messaging-primary ring-opacity-50" : "ring-transparent"
         )}>
-          <AvatarImage src={otherParticipant?.avatar} alt={otherUserName} />
+          <AvatarImage src={avatarUrl || otherParticipant?.avatar} alt={otherUserName} />
           <AvatarFallback className="bg-messaging-secondary text-messaging-primary font-medium">
             {getInitials(otherUserName)}
           </AvatarFallback>
