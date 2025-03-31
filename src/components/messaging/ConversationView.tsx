@@ -1,5 +1,5 @@
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { Conversation } from "@/data/types";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
@@ -28,7 +28,7 @@ export default function ConversationView({ conversation, onSendMessage, onReport
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
-  // Get current user ID and other participant's info
+  // Get current user ID and other participant's info - optimize with sessionStorage caching
   useEffect(() => {
     const fetchData = async () => {
       setIsLoadingProfile(true);
@@ -44,32 +44,62 @@ export default function ConversationView({ conversation, onSendMessage, onReport
           )?.id;
           
           if (otherParticipantId) {
-            // Fetch their profile
-            const { data: profileData, error } = await supabase
-              .from('profiles')
-              .select('name')
-              .eq('id', otherParticipantId)
-              .single();
-              
-            if (error) {
-              console.error("Error fetching other user profile:", error);
-              setOtherUserName(`User ${otherParticipantId.substring(0, 8)}`);
-            } else if (profileData) {
-              // Use full name from profile
-              setOtherUserName(profileData.name || `User ${otherParticipantId.substring(0, 4)}`);
+            // Check if we have cached profile data
+            const cacheKey = `profile_${otherParticipantId}`;
+            const cachedProfile = sessionStorage.getItem(cacheKey);
+            
+            if (cachedProfile) {
+              const profileData = JSON.parse(cachedProfile);
+              setOtherUserName(profileData.name || `User ${otherParticipantId.substring(0, 8)}`);
+            } else {
+              // Fetch their profile
+              const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('name')
+                .eq('id', otherParticipantId)
+                .maybeSingle();
+                
+              if (error) {
+                console.error("Error fetching other user profile:", error);
+                setOtherUserName(`User ${otherParticipantId.substring(0, 8)}`);
+              } else if (profileData) {
+                // Use full name from profile
+                setOtherUserName(profileData.name || `User ${otherParticipantId.substring(0, 4)}`);
+                // Cache the profile data
+                sessionStorage.setItem(cacheKey, JSON.stringify(profileData));
+              }
             }
             
-            // Fetch avatar
-            const { data: publicUrl } = supabase
-              .storage
-              .from('avatars')
-              .getPublicUrl(`${otherParticipantId}/avatar`);
+            // Check if we have cached avatar URL
+            const avatarCacheKey = `avatar_${otherParticipantId}`;
+            const cachedAvatarUrl = sessionStorage.getItem(avatarCacheKey);
             
-            if (publicUrl?.publicUrl) {
-              // Check if the file exists by making a HEAD request
-              const response = await fetch(publicUrl.publicUrl, { method: 'HEAD' });
-              if (response.ok) {
-                setAvatarUrl(publicUrl.publicUrl);
+            if (cachedAvatarUrl) {
+              if (cachedAvatarUrl !== "null") {
+                setAvatarUrl(cachedAvatarUrl);
+              }
+            } else {
+              // Fetch avatar
+              const { data: publicUrl } = supabase
+                .storage
+                .from('avatars')
+                .getPublicUrl(`${otherParticipantId}/avatar`);
+              
+              if (publicUrl?.publicUrl) {
+                // Check if the file exists by making a HEAD request
+                try {
+                  const response = await fetch(publicUrl.publicUrl, { method: 'HEAD' });
+                  if (response.ok) {
+                    setAvatarUrl(publicUrl.publicUrl);
+                    sessionStorage.setItem(avatarCacheKey, publicUrl.publicUrl);
+                  } else {
+                    sessionStorage.setItem(avatarCacheKey, "null");
+                  }
+                } catch (err) {
+                  sessionStorage.setItem(avatarCacheKey, "null");
+                }
+              } else {
+                sessionStorage.setItem(avatarCacheKey, "null");
               }
             }
           }
@@ -85,9 +115,11 @@ export default function ConversationView({ conversation, onSendMessage, onReport
   }, [conversation.participants]);
   
   // Find the other participant (not the current user)
-  const otherParticipant = conversation.participants.find(
-    (p) => p.id !== currentUserId
-  );
+  const otherParticipant = useMemo(() => {
+    return conversation.participants.find(
+      (p) => p.id !== currentUserId
+    );
+  }, [conversation.participants, currentUserId]);
   
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -101,14 +133,14 @@ export default function ConversationView({ conversation, onSendMessage, onReport
   };
   
   // Generate initials for avatar fallback
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    return name.split(" ")
+  const getInitials = useMemo(() => {
+    if (!otherUserName) return "U";
+    return otherUserName.split(" ")
       .map(part => part[0])
       .join("")
       .substring(0, 2)
       .toUpperCase();
-  };
+  }, [otherUserName]);
   
   if (!otherParticipant) return null;
   
@@ -122,7 +154,7 @@ export default function ConversationView({ conversation, onSendMessage, onReport
               <AvatarImage src={avatarUrl} alt={otherUserName} />
             ) : (
               <AvatarFallback className="bg-purple-100 text-purple-500">
-                {getInitials(otherUserName)}
+                {getInitials}
               </AvatarFallback>
             )}
           </Avatar>

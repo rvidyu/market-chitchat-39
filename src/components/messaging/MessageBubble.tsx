@@ -1,3 +1,4 @@
+
 import { Message } from "@/data/types";
 import { formatTimestamp } from "@/data/messageUtils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,7 +7,7 @@ import { cn } from "@/lib/utils";
 import ProductMessageCard from "./ProductMessageCard";
 import MessageImageAttachment from "./MessageImageAttachment";
 import { useMessageUser } from "@/hooks/useMessageUser";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface MessageBubbleProps {
@@ -18,12 +19,23 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   const { isCurrentUser, senderName, isLoading } = useMessageUser(message.senderId);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
-  // Fetch avatar for the message sender
+  // Optimize avatar fetching to reduce unnecessary network requests
   useEffect(() => {
+    if (!message.senderId) return;
+    
+    // Create a cache key based on the sender ID
+    const cacheKey = `avatar_${message.senderId}`;
+    
+    // Check if we have a cached avatar URL
+    const cachedUrl = sessionStorage.getItem(cacheKey);
+    if (cachedUrl) {
+      setAvatarUrl(cachedUrl !== "null" ? cachedUrl : null);
+      return;
+    }
+    
+    // Fetch avatar for the message sender
     const fetchAvatar = async () => {
       try {
-        if (!message.senderId) return;
-        
         const { data: publicUrl } = supabase
           .storage
           .from('avatars')
@@ -31,26 +43,31 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         
         if (publicUrl?.publicUrl) {
           // Check if the file exists by making a HEAD request
-          const response = await fetch(publicUrl.publicUrl, { method: 'HEAD' })
-            .catch(() => ({ ok: false })); // Handle network errors gracefully
-            
-          if (response.ok) {
-            setAvatarUrl(publicUrl.publicUrl);
-          }
+          fetch(publicUrl.publicUrl, { method: 'HEAD' })
+            .then(response => {
+              if (response.ok) {
+                setAvatarUrl(publicUrl.publicUrl);
+                // Cache the URL in session storage
+                sessionStorage.setItem(cacheKey, publicUrl.publicUrl);
+              } else {
+                sessionStorage.setItem(cacheKey, "null");
+              }
+            })
+            .catch(() => {
+              sessionStorage.setItem(cacheKey, "null");
+            });
         }
       } catch (err) {
         console.error("Error fetching avatar:", err);
-        // Don't set error state, just keep the avatar as null
+        sessionStorage.setItem(cacheKey, "null");
       }
     };
     
-    if (message.senderId) {
-      fetchAvatar();
-    }
+    fetchAvatar();
   }, [message.senderId]);
   
-  // Dynamic rendering for optimal performance
-  const renderMessageContent = () => (
+  // Use useMemo to prevent unnecessary re-renders
+  const messageContent = useMemo(() => (
     <>
       {/* Product Card (if any) */}
       {message.product && (
@@ -64,6 +81,10 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           ? "bg-messaging-primary text-white rounded-tr-none"
           : "bg-gray-100 text-messaging-text rounded-tl-none"
       )}>
+        {/* Show full name for non-current user messages */}
+        {!isCurrentUser && !isLoading && (
+          <div className="font-medium text-sm mb-1">{senderName}</div>
+        )}
         <p className="whitespace-pre-wrap">{message.text}</p>
       </div>
       
@@ -81,7 +102,12 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         </div>
       )}
     </>
-  );
+  ), [message, isCurrentUser, isLoading, senderName]);
+  
+  // Get initials for avatar fallback
+  const getInitials = useMemo(() => {
+    return senderName.charAt(0).toUpperCase();
+  }, [senderName]);
   
   return (
     <div className={cn(
@@ -101,24 +127,21 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
               ? "bg-messaging-primary text-white" 
               : "bg-messaging-secondary text-messaging-primary"
           )}>
-            {isCurrentUser ? "You" : senderName.charAt(0).toUpperCase()}
+            {isCurrentUser ? "You" : getInitials}
           </AvatarFallback>
         )}
       </Avatar>
       
       <div className="flex flex-col max-w-[80%]">
+        {/* Only show timestamp */}
         <div className="flex items-center mb-1">
-          {/* Show sender name and timestamp */}
-          <span className="text-xs font-medium mr-2">
-            {isLoading ? "Loading..." : senderName}
-          </span>
           <span className="text-xs text-messaging-muted">
             {formatTimestamp(message.timestamp)}
           </span>
         </div>
         
         <div>
-          {renderMessageContent()}
+          {messageContent}
         </div>
       </div>
     </div>

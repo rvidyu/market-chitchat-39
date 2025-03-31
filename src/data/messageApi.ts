@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Message, Conversation, Product, User } from './types';
 
@@ -40,7 +39,7 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
           .from('profiles')
           .select('name')
           .eq('id', partnerId)
-          .single();
+          .maybeSingle();
           
         // Fetch the latest messages for this conversation
         const { data: messages } = await supabase
@@ -60,7 +59,7 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
           .from('profiles')
           .select('name')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         // Create conversation object - Making sure all properties match the type
         const conversation: Conversation = {
@@ -189,16 +188,29 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
       throw new Error('User not authenticated');
     }
     
-    // Parse the conversation ID to get the participants
-    // Conversation IDs are in the format "user1Id-user2Id" (sorted)
-    const participantIds = conversationId.split('-');
-    if (participantIds.length !== 2) {
+    // Check if the conversation ID contains a hyphen which indicates it's a composite ID
+    if (!conversationId.includes('-')) {
       console.error('Invalid conversation ID format:', conversationId);
       return;
     }
     
-    // Determine the other participant's ID
-    const otherUserId = participantIds[0] === user.id ? participantIds[1] : participantIds[0];
+    // Parse the conversation ID to get the participants
+    const participantIds = conversationId.split('-');
+    
+    // Handle UUIDs which may contain hyphens themselves
+    let otherUserId: string;
+    if (participantIds.length === 2) {
+      // Simple case: just two IDs separated by a hyphen
+      otherUserId = participantIds[0] === user.id ? participantIds[1] : participantIds[0];
+    } else {
+      // Complex case: UUIDs with hyphens
+      // Reconstruct the UUIDs from the parts
+      const firstId = participantIds.slice(0, 5).join('-'); // First UUID
+      const secondId = participantIds.slice(5).join('-'); // Second UUID
+      
+      // Determine which one is the other user
+      otherUserId = firstId === user.id ? secondId : firstId;
+    }
     
     // Create a more efficient query with better error handling
     const { error } = await supabase
