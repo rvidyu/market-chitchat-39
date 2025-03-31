@@ -55,7 +55,7 @@ export default function ConversationItem({
               console.error("Error fetching other user profile:", error);
               setOtherUserName(`User ${otherParticipantId.substring(0, 8)}`);
             } else if (profileData) {
-              // Use the full name from profile without truncation
+              // Use the full name from profile
               setOtherUserName(profileData.name || `User ${otherParticipantId.substring(0, 4)}`);
             }
             
