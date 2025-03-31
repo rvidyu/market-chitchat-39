@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth";
 import { LogIn, UserPlus, LogOut, User, ShoppingBag, Store, MessageSquare } from "lucide-react";
 import {
   DropdownMenu,

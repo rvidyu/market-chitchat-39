@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ConversationView from "./ConversationView";
@@ -9,7 +8,7 @@ import SpamReportNotification from "./SpamReportNotification";
 import { useSpamManagement } from "./hooks/useSpamManagement";
 import { useConversationManagement } from "./hooks/useConversationManagement";
 import MobileMessagingView from "./MobileMessagingView";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth";
 
 interface MessagingProps {
   initialConversationId?: string | null;

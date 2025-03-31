@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Messaging from "@/components/messaging/Messaging";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Store, MessageSquare, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
