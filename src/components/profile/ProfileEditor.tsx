@@ -1,15 +1,16 @@
-
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { useAvatarUpload } from "@/hooks/useAvatarUpload";
 import { useProfileUpdate } from "@/hooks/useProfileUpdate";
 import AvatarUploader from "./AvatarUploader";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProfileEditor = () => {
   const { user, session } = useAuth();
@@ -24,26 +25,48 @@ const ProfileEditor = () => {
   
   const { 
     name, 
-    setName, 
+    setName,
+    email,
+    setEmail,
+    bio,
+    setBio,
     isLoading, 
     setIsLoading,
-    updateProfileName 
+    updateProfile 
   } = useProfileUpdate({ userId: user?.id, session });
 
-  // Initialize name from user data
+  // Initialize profile data from user
   useEffect(() => {
-    if (user?.name) {
-      setName(user.name);
+    if (user) {
+      if (user.name) setName(user.name);
+      if (user.email) setEmail(user.email);
+      
+      // Fetch the shop description (bio) if it exists
+      const fetchShopDescription = async () => {
+        if (!user.id) return;
+        
+        const { data } = await supabase
+          .from('profiles')
+          .select('shop_description')
+          .eq('id', user.id)
+          .single();
+          
+        if (data?.shop_description) {
+          setBio(data.shop_description);
+        }
+      };
+      
+      fetchShopDescription();
     }
-  }, [user, setName]);
+  }, [user, setName, setEmail, setBio]);
 
-  const updateProfile = async () => {
+  const handleProfileUpdate = async () => {
     setIsLoading(true);
     try {
-      // Update profile name
-      const { error: nameError } = await updateProfileName();
+      // Update profile data
+      const { error: profileError } = await updateProfile();
       
-      if (nameError) throw nameError;
+      if (profileError) throw profileError;
 
       // Upload avatar if selected
       if (avatarFile) {
@@ -100,10 +123,32 @@ const ProfileEditor = () => {
             placeholder="Your name"
           />
         </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Your email address"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="bio">About / Bio</Label>
+          <Textarea
+            id="bio"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="Tell us about yourself or your shop..."
+            rows={4}
+          />
+        </div>
       </CardContent>
       <CardFooter>
         <Button 
-          onClick={updateProfile} 
+          onClick={handleProfileUpdate} 
           disabled={isLoading} 
           className="w-full"
         >

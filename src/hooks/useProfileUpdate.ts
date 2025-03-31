@@ -11,10 +11,12 @@ interface UseProfileUpdateProps {
 
 export const useProfileUpdate = ({ userId, session }: UseProfileUpdateProps) => {
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [bio, setBio] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const updateProfileName = async () => {
+  const updateProfile = async () => {
     if (!userId || !session) {
       toast({
         variant: "destructive",
@@ -26,7 +28,11 @@ export const useProfileUpdate = ({ userId, session }: UseProfileUpdateProps) => 
     
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ name })
+      .update({ 
+        name,
+        email,
+        shop_description: bio 
+      })
       .eq('id', userId);
     
     if (updateError) {
@@ -39,8 +45,12 @@ export const useProfileUpdate = ({ userId, session }: UseProfileUpdateProps) => 
   return {
     name,
     setName,
+    email,
+    setEmail,
+    bio,
+    setBio,
     isLoading,
     setIsLoading,
-    updateProfileName
+    updateProfile
   };
 };
