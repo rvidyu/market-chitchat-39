@@ -63,16 +63,18 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
               id: user.id,
               name: user.user_metadata?.name || user.email || "You",
               avatar: "", // Adding required avatar field
+              isOnline: true,
             },
             {
               id: partnerId,
               name: partnerProfile?.name || "Unknown User",
               avatar: "", // Adding required avatar field
+              isOnline: false,
             }
           ],
           messages: (messages || []).map(msg => ({
             id: msg.id,
-            conversationId,
+            conversationId: conversationId, // Ensure conversationId is set and required
             senderId: msg.sender_id,
             text: msg.text,
             timestamp: msg.timestamp, // Keep as string to match the type
@@ -88,7 +90,7 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
             ...(msg.images && { images: msg.images })
           })).reverse(),
           unreadCount,
-          lastActivity: pair.timestamp
+          lastActivity: pair.timestamp // Ensure lastActivity is set
         };
         
         conversationsMap.set(conversationId, conversation);
@@ -157,10 +159,10 @@ export const sendMessage = async (
     // Return the created message
     return {
       id: newMessage.id,
-      conversationId,
+      conversationId: conversationId, // Make sure conversationId is included and required
       senderId: newMessage.sender_id,
       text: newMessage.text,
-      timestamp: newMessage.timestamp, // Keep as string
+      timestamp: newMessage.timestamp, // Keep as string to match the type
       isRead: newMessage.is_read,
       images: newMessage.images,
       product: product

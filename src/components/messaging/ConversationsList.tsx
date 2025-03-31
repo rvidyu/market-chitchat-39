@@ -3,11 +3,12 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import ConversationItem from "./ConversationItem";
-import { Conversation, currentUser } from "@/data/messages";
+import { Conversation } from "@/data/types";
 import { Inbox, Send, Archive, AlertCircle, Flag } from "lucide-react";
 import FilterBar from "./FilterBar";
 import EmptyFilterState from "./EmptyFilterState";
 import { FilterType, FilterOption } from "./types/FilterTypes";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ConversationsListProps {
   conversations: Conversation[];
@@ -26,6 +27,16 @@ export default function ConversationsList({
 }: ConversationsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("inbox");
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  
+  // Get current user ID
+  useState(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setCurrentUserId(data.user.id);
+      }
+    });
+  });
 
   // Count unread messages
   const unreadCount = conversations.reduce((count, conv) => {
@@ -38,7 +49,7 @@ export default function ConversationsList({
   // Count sent messages (where last message is from current user)
   const sentCount = conversations.filter(conv => {
     const lastMessage = conv.messages[conv.messages.length - 1];
-    return lastMessage.senderId === currentUser.id && !spamConversations.includes(conv.id);
+    return lastMessage.senderId === currentUserId && !spamConversations.includes(conv.id);
   }).length;
   
   // Count spam messages
@@ -56,7 +67,7 @@ export default function ConversationsList({
   // Filter conversations based on search query and active filter
   const filteredConversations = conversations.filter((conversation) => {
     const otherParticipant = conversation.participants.find(
-      (participant) => participant.id !== currentUser.id
+      (participant) => participant.id !== currentUserId
     );
 
     // Name search filter
@@ -70,12 +81,12 @@ export default function ConversationsList({
       case "inbox":
         // Messages where the current user is the recipient (not the last sender)
         const lastMessage = conversation.messages[conversation.messages.length - 1];
-        matchesFilter = lastMessage.senderId !== currentUser.id && !spamConversations.includes(conversation.id);
+        matchesFilter = lastMessage.senderId !== currentUserId && !spamConversations.includes(conversation.id);
         break;
       case "sent":
         // Messages where the current user is the last sender
         const lastSentMessage = conversation.messages[conversation.messages.length - 1];
-        matchesFilter = lastSentMessage.senderId === currentUser.id && !spamConversations.includes(conversation.id);
+        matchesFilter = lastSentMessage.senderId === currentUserId && !spamConversations.includes(conversation.id);
         break;
       case "unread":
         // Conversations with unread messages
