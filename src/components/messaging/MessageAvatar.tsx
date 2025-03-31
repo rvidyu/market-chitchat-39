@@ -65,7 +65,14 @@ export default function MessageAvatar({
   }, [senderId]);
 
   // Get initials for avatar fallback
-  const getInitials = senderName.charAt(0).toUpperCase();
+  const getInitials = () => {
+    if (!senderName) return "U";
+    return senderName.split(" ")
+      .map(part => part[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
 
   return (
     <Avatar className={cn(
@@ -80,7 +87,7 @@ export default function MessageAvatar({
             ? "bg-messaging-primary text-white" 
             : "bg-messaging-secondary text-messaging-primary"
         )}>
-          {isCurrentUser ? "You" : getInitials}
+          {isCurrentUser ? "You" : getInitials()}
         </AvatarFallback>
       )}
     </Avatar>
