@@ -15,18 +15,42 @@ interface MessageBubbleProps {
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
   const [isCurrentUser, setIsCurrentUser] = useState(false);
+  const [senderName, setSenderName] = useState<string>("");
   
-  // Only check if message is from current user, don't fetch name
+  // Get current user and check if message is from current user
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setIsCurrentUser(message.senderId === user.id);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setIsCurrentUser(message.senderId === user.id);
+          
+          // Fetch user profile from database
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', message.senderId)
+            .single();
+            
+          if (error) {
+            console.error("Error fetching profile:", error);
+            setSenderName(isCurrentUser ? "You" : "User");
+          } else if (profile && profile.name) {
+            // If it's the current user, show "You", otherwise show their name
+            setSenderName(isCurrentUser ? "You" : profile.name);
+          } else {
+            // Fallback for when profile doesn't exist or name is null
+            setSenderName(isCurrentUser ? "You" : `User ${message.senderId.substring(0, 7)}`);
+          }
+        }
+      } catch (error) {
+        console.error("Error in checkUser:", error);
+        setSenderName(isCurrentUser ? "You" : "User");
       }
     };
     
     checkUser();
-  }, [message.senderId]);
+  }, [message.senderId, isCurrentUser]);
   
   // Dynamic rendering for optimal performance
   const renderMessageContent = () => (
@@ -67,7 +91,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       "flex items-start gap-2 mb-4",
       isCurrentUser ? "flex-row-reverse" : "",
     )}>
-      {/* Simplified avatar that just shows "You" or "UB" for user/buyer */}
+      {/* Avatar with user initials */}
       <Avatar className={cn(
         "h-8 w-8",
         isCurrentUser ? "bg-messaging-primary" : "bg-messaging-secondary",
@@ -77,13 +101,16 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
             ? "bg-messaging-primary text-white" 
             : "bg-messaging-secondary text-messaging-primary"
         )}>
-          {isCurrentUser ? "UB" : "S"}
+          {isCurrentUser ? "You" : senderName.charAt(0).toUpperCase()}
         </AvatarFallback>
       </Avatar>
       
       <div className="flex flex-col max-w-[80%]">
         <div className="flex items-center mb-1">
-          {/* Only show timestamp, no names */}
+          {/* Show sender name and timestamp */}
+          <span className="text-xs font-medium mr-2">
+            {senderName}
+          </span>
           <span className="text-xs text-messaging-muted">
             {formatTimestamp(message.timestamp)}
           </span>
