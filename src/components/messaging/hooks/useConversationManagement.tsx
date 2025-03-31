@@ -4,6 +4,7 @@ import { Conversation, currentUser } from "@/data/messages";
 import { useToast } from "@/hooks/use-toast";
 import { fetchConversations, sendMessage, markMessagesAsRead } from "@/data/messageApi";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useConversationManagement = (
   initialConversationId: string | null = null
@@ -25,6 +26,8 @@ export const useConversationManagement = (
       // Handle image uploads (in a real app)
       const imageUrls: string[] = [];
       if (images && images.length > 0) {
+        // For future implementation: upload images to Supabase storage
+        // and get their URLs
         images.forEach(image => {
           const imageUrl = URL.createObjectURL(image);
           imageUrls.push(imageUrl);
@@ -102,6 +105,41 @@ export const useConversationManagement = (
       markAsReadMutation.mutate(initialConversationId);
     }
   }, [initialConversationId]);
+
+  // Set up realtime subscription for new messages
+  useEffect(() => {
+    // Get the current authenticated user from Supabase
+    const { data: { user } } = supabase.auth.getUser();
+    
+    // Set up the channel for real-time messages
+    const channel = supabase
+      .channel('public:messages')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `recipient_id=eq.${user?.id}`
+        },
+        () => {
+          // When a new message comes in, refresh the conversations
+          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+          
+          // If it's not from the active conversation, show a toast
+          toast({
+            title: "New message",
+            description: "You have received a new message.",
+          });
+        }
+      )
+      .subscribe();
+      
+    // Clean up subscription when component unmounts
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, toast]);
 
   return {
     conversationsList,

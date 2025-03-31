@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth";
+import { useToast } from "@/hooks/use-toast";
 
 interface ShopOverviewProps {
   seller: SellerData;
@@ -16,6 +17,7 @@ const ShopOverview = ({ seller }: ShopOverviewProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const visitShop = () => {
     navigate(`/shop/${seller.id}`);
@@ -23,9 +25,13 @@ const ShopOverview = ({ seller }: ShopOverviewProps) => {
 
   const startChat = () => {
     if (user) {
-      navigate(`/chat/${seller.id}`);
+      navigate(`/chat`, { state: { sellerId: seller.id } });
     } else {
-      // Redirect to login if not authenticated
+      toast({
+        title: "Login Required",
+        description: "You need to log in to contact sellers.",
+        variant: "destructive"
+      });
       navigate('/login');
     }
   };

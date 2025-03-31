@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -9,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import QuickReplyManager from "@/components/messaging/QuickReplyManager";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -19,18 +21,80 @@ const Chat = () => {
   const [quickReplyManagerOpen, setQuickReplyManagerOpen] = useState(false);
 
   useEffect(() => {
-    // Handle conversation ID from location state
-    if (location.state?.conversationId) {
-      setActiveConversationId(location.state.conversationId);
-    }
+    // Handle conversation ID from URL params or location state
+    const initChat = async () => {
+      if (!user) return;
+      
+      // Check if seller ID is in state (used by ShopOverview)
+      const sellerIdFromState = location.state?.sellerId;
+      const sellerIdToUse = sellerId || sellerIdFromState;
+      
+      if (sellerIdToUse && user) {
+        // Generate conversation ID (sort IDs to ensure consistency)
+        const participantIds = [user.id, sellerIdToUse].sort();
+        const conversationId = participantIds.join('-');
+        setActiveConversationId(conversationId);
+        
+        // If we also have a product ID, we should start the conversation with that product
+        if (productId) {
+          try {
+            // Fetch product details
+            const { data: productData, error: productError } = await supabase
+              .from('products')
+              .select('*')
+              .eq('id', productId)
+              .single();
+              
+            if (productError || !productData) {
+              console.error('Error fetching product:', productError);
+              return;
+            }
+            
+            // Check if there are any existing messages in this conversation
+            const { data: existingMessages, error: messagesError } = await supabase
+              .from('messages')
+              .select('count')
+              .or(`and(sender_id.eq.${user.id},recipient_id.eq.${sellerIdToUse}),and(sender_id.eq.${sellerIdToUse},recipient_id.eq.${user.id})`)
+              .limit(1);
+              
+            if (messagesError) {
+              console.error('Error checking existing messages:', messagesError);
+              return;
+            }
+            
+            // Only add the product message if this is a new conversation
+            if (!existingMessages || existingMessages.length === 0) {
+              // Create a new message including the product
+              const { error: sendError } = await supabase
+                .from('messages')
+                .insert({
+                  sender_id: user.id,
+                  recipient_id: sellerIdToUse,
+                  text: `Hi, I'm interested in this product:`,
+                  product_id: productData.id,
+                  product_name: productData.name,
+                  product_price: `$${productData.price}`,
+                  product_image: productData.image_url,
+                  timestamp: new Date().toISOString()
+                });
+                
+              if (sendError) {
+                console.error('Error sending product message:', sendError);
+              }
+            }
+          } catch (err) {
+            console.error('Error initializing product chat:', err);
+          }
+        }
+      }
+      
+      // Handle conversation ID from location state (e.g., from notifications)
+      if (location.state?.conversationId) {
+        setActiveConversationId(location.state.conversationId);
+      }
+    };
     
-    // Handle conversation from URL parameters
-    if (sellerId && user) {
-      // Create conversation ID from user and seller IDs (sorted)
-      const userIds = [user.id, sellerId].sort();
-      const conversationId = userIds.join('-');
-      setActiveConversationId(conversationId);
-    }
+    initChat();
   }, [location.state, sellerId, productId, user, navigate]);
 
   const handleMarkNotSpam = () => {
