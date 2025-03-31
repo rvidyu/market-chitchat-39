@@ -10,96 +10,105 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
       throw new Error('User not authenticated');
     }
     
-    // Use a more efficient query with JOIN operations to reduce database roundtrips
-    const { data: conversations, error } = await supabase
-      .from('conversations')
-      .select(`
-        *,
-        sender:profiles!conversations_sender_id_fkey(id, name),
-        recipient:profiles!conversations_recipient_id_fkey(id, name)
-      `)
+    console.log("Fetching conversations for user:", user.id);
+    
+    // First, get all messages involving the current user
+    const { data: messages, error: messagesError } = await supabase
+      .from('messages')
+      .select('*')
       .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
       .order('timestamp', { ascending: false });
     
-    if (error) {
-      console.error('Error fetching conversations:', error);
+    if (messagesError) {
+      console.error('Error fetching messages:', messagesError);
       return [];
     }
     
-    // Transform the data into Conversation objects
-    const conversationsMap = new Map();
+    // Map to store conversations
+    const conversationsMap = new Map<string, Conversation>();
     
-    for (const conv of conversations || []) {
+    // Process messages to build conversations
+    for (const message of messages || []) {
       // Determine the conversation partner's ID
-      const partnerId = conv.sender_id === user.id ? conv.recipient_id : conv.sender_id;
+      const partnerId = message.sender_id === user.id ? message.recipient_id : message.sender_id;
       
-      // Create a unique conversation ID from the two user IDs (sorted)
+      // Create a unique conversation ID using sorted participant IDs
       const participantIds = [user.id, partnerId].sort();
       const conversationId = participantIds.join('-');
       
+      // If this conversation isn't in our map yet, fetch the partner's profile and initialize it
       if (!conversationsMap.has(conversationId)) {
-        // Get partner profile from the joined data
-        // Fix: Add type checking to handle possible null values
-        const partnerProfile = conv.sender_id === user.id 
-          ? (conv.recipient as { id?: string; name?: string } || {}) 
-          : (conv.sender as { id?: string; name?: string } || {});
+        // Fetch partner profile information
+        const { data: partnerProfile } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .eq('id', partnerId)
+          .maybeSingle();
         
-        // Fetch the latest messages for this conversation in a single query
-        const { data: messages } = await supabase
-          .from('messages')
-          .select('*')
-          .or(`and(sender_id.eq.${user.id},recipient_id.eq.${partnerId}),and(sender_id.eq.${partnerId},recipient_id.eq.${user.id})`)
-          .order('timestamp', { ascending: false })
-          .limit(20);
-          
-        // Count unread messages
-        const unreadCount = messages?.filter(
-          msg => msg.sender_id === partnerId && !msg.is_read
-        ).length || 0;
-        
-        // Create conversation object with all required fields
-        const conversation: Conversation = {
+        // Create a new conversation object
+        conversationsMap.set(conversationId, {
           id: conversationId,
           participants: [
             {
               id: user.id,
               name: user.user_metadata?.name || user.email || "You",
-              avatar: "", 
+              avatar: "",
               isOnline: true,
             },
             {
               id: partnerId,
-              name: partnerProfile?.name || "Unknown User",
-              avatar: "", 
+              name: partnerProfile?.name || `User ${partnerId.substring(0, 8)}`,
+              avatar: "",
               isOnline: false,
             }
           ],
-          messages: (messages || []).map(msg => ({
-            id: msg.id,
-            conversationId: conversationId,
-            senderId: msg.sender_id,
-            text: msg.text,
-            timestamp: msg.timestamp,
-            isRead: msg.is_read,
-            ...(msg.product_id && {
-              product: {
-                id: msg.product_id,
-                name: msg.product_name || "Product",
-                image: msg.product_image || "",
-                price: msg.product_price || ""
-              }
-            }),
-            ...(msg.images && { images: msg.images })
-          })).reverse(),
-          unreadCount,
-          lastActivity: conv.timestamp
-        };
-        
-        conversationsMap.set(conversationId, conversation);
+          messages: [],
+          lastActivity: message.timestamp,
+          unreadCount: 0
+        });
+      }
+      
+      // Get the conversation we're building
+      const conversation = conversationsMap.get(conversationId)!;
+      
+      // Add this message to the conversation
+      conversation.messages.push({
+        id: message.id,
+        conversationId: conversationId,
+        senderId: message.sender_id,
+        text: message.text,
+        timestamp: message.timestamp,
+        isRead: message.is_read,
+        ...(message.product_id && {
+          product: {
+            id: message.product_id,
+            name: message.product_name || "Product",
+            image: message.product_image || "",
+            price: message.product_price || ""
+          }
+        }),
+        ...(message.images && { images: message.images })
+      });
+      
+      // Update last activity
+      if (new Date(message.timestamp) > new Date(conversation.lastActivity)) {
+        conversation.lastActivity = message.timestamp;
+      }
+      
+      // Update unread count if the message is unread and not from the current user
+      if (!message.is_read && message.sender_id !== user.id) {
+        conversation.unreadCount++;
       }
     }
     
-    // Convert the map to an array and sort by last activity
+    // Sort messages chronologically for each conversation
+    for (const conversation of conversationsMap.values()) {
+      conversation.messages.sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+    }
+    
+    // Convert map to array and sort by last activity
     return Array.from(conversationsMap.values())
       .sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
     

@@ -15,33 +15,24 @@ export const useRealtimeMessages = (
   useEffect(() => {
     let userId: string | null = null;
     
-    // Get the current authenticated user from sessionStorage first if available
+    // Get the current authenticated user and set up subscription
     const setupRealtimeListener = async () => {
       try {
-        const sessionUser = sessionStorage.getItem('currentUser');
-        let user = sessionUser ? JSON.parse(sessionUser) : null;
+        // Get current user
+        const { data } = await supabase.auth.getUser();
+        const user = data.user;
         
         if (!user) {
-          // If not in session storage, get from supabase and store for future use
-          const { data } = await supabase.auth.getUser();
-          user = data.user;
-          if (user) {
-            sessionStorage.setItem('currentUser', JSON.stringify(user));
-          }
+          console.log("No authenticated user found");
+          return null;
         }
         
-        if (!user) return null;
-        
         userId = user.id;
+        console.log("Setting up realtime subscription for user:", userId);
         
-        // Set up the channel for real-time messages with optimized configuration
+        // Set up the channel for real-time messages
         const channel = supabase
-          .channel('messages-realtime', {
-            config: {
-              broadcast: { self: true },
-              presence: { key: userId },
-            }
-          })
+          .channel('messages-channel')
           .on(
             'postgres_changes',
             { 
@@ -53,11 +44,9 @@ export const useRealtimeMessages = (
             (payload) => {
               console.log("New message received:", payload);
               
-              // Faster invalidation approach with targeted cache updates
+              // Invalidate conversations query to refresh the data
               queryClient.invalidateQueries({ 
-                queryKey: ['conversations'],
-                refetchType: 'active',
-                exact: false
+                queryKey: ['conversations']
               });
               
               // Extract conversation participants
@@ -73,7 +62,7 @@ export const useRealtimeMessages = (
                 toast({
                   title: "New message",
                   description: "You have received a new message.",
-                  duration: 3000, // Shorter duration for better UX
+                  duration: 3000,
                 });
               } else if (onNewMessage) {
                 // If it's from the active conversation, mark it as read immediately

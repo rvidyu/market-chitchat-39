@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Conversation } from "@/data/types";
 import { fetchConversations } from "@/data/api";
@@ -30,13 +31,17 @@ export const useConversationManagement = (
   // Update cached conversations only when meaningful changes occur
   useEffect(() => {
     if (fetchedConversations.length > 0) {
+      console.log("Received conversations:", fetchedConversations.length);
       // Only update cached conversations if there's a meaningful difference
       const hasChanges = JSON.stringify(latestConversationsRef.current) !== JSON.stringify(fetchedConversations);
       
       if (hasChanges) {
+        console.log("Updating cached conversations");
         setCachedConversations(fetchedConversations);
         latestConversationsRef.current = fetchedConversations;
       }
+    } else {
+      console.log("No conversations fetched");
     }
   }, [fetchedConversations]);
 
