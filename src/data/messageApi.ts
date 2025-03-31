@@ -55,7 +55,7 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
           msg => msg.sender_id === partnerId && !msg.is_read
         ).length || 0;
         
-        // Create conversation object
+        // Create conversation object - Making sure all properties match the type
         const conversation: Conversation = {
           id: conversationId,
           participants: [
@@ -85,8 +85,9 @@ export const fetchConversations = async (): Promise<Conversation[]> => {
             }),
             ...(msg.images && { images: msg.images })
           })).reverse(),
-          lastActivity: pair.timestamp,
-          unreadCount
+          unreadCount,
+          // Adding lastActivity as it's required by the Conversation type
+          lastActivity: pair.timestamp
         };
         
         conversationsMap.set(conversationId, conversation);

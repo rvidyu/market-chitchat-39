@@ -108,37 +108,48 @@ export const useConversationManagement = (
 
   // Set up realtime subscription for new messages
   useEffect(() => {
-    // Get the current authenticated user from Supabase
-    const { data: { user } } = supabase.auth.getUser();
+    // Get the current authenticated user from Supabase - FIX HERE
+    let user;
     
-    // Set up the channel for real-time messages
-    const channel = supabase
-      .channel('public:messages')
-      .on(
-        'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages',
-          filter: `recipient_id=eq.${user?.id}`
-        },
-        () => {
-          // When a new message comes in, refresh the conversations
-          queryClient.invalidateQueries({ queryKey: ['conversations'] });
-          
-          // If it's not from the active conversation, show a toast
-          toast({
-            title: "New message",
-            description: "You have received a new message.",
-          });
-        }
-      )
-      .subscribe();
+    // Use async/await properly with an immediately invoked async function
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
       
-    // Clean up subscription when component unmounts
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      if (user) {
+        // Set up the channel for real-time messages
+        const channel = supabase
+          .channel('public:messages')
+          .on(
+            'postgres_changes',
+            { 
+              event: 'INSERT', 
+              schema: 'public', 
+              table: 'messages',
+              filter: `recipient_id=eq.${user.id}`
+            },
+            () => {
+              // When a new message comes in, refresh the conversations
+              queryClient.invalidateQueries({ queryKey: ['conversations'] });
+              
+              // If it's not from the active conversation, show a toast
+              toast({
+                title: "New message",
+                description: "You have received a new message.",
+              });
+            }
+          )
+          .subscribe();
+          
+        // Return cleanup function
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }
+    })();
+    
+    // Return an empty cleanup function for React's useEffect
+    return () => {};
   }, [queryClient, toast]);
 
   return {
