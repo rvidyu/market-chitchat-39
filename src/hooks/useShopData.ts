@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth";
 import { useNavigate } from "react-router-dom";
-import { SellerData, getSellerById, updateShopDescription } from "@/data/sellers";
-import { getProductsBySellerId, Product } from "@/data/products";
+import { SellerData, getSellerById } from "@/data/sellers";
+import { fetchProductsBySellerId, Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 
 // Function to load products from Supabase
@@ -75,7 +75,7 @@ export const useShopData = (sellerId?: string) => {
           // If no Supabase products, fall back to mock data
           const allProducts = supabaseProducts.length > 0 
             ? supabaseProducts 
-            : getProductsBySellerId(user.id);
+            : await fetchProductsBySellerId(user.id);
             
           setProducts(allProducts);
         } else {
@@ -83,7 +83,6 @@ export const useShopData = (sellerId?: string) => {
           const defaultSellerData: SellerData = {
             id: user.id,
             name: user.name,
-            email: user.email,
             role: "seller",
             shopDescription: "Welcome to my handmade and vintage shop! I specialize in creating unique, one-of-a-kind items made with love and care.",
             stats: {
@@ -111,7 +110,7 @@ export const useShopData = (sellerId?: string) => {
             // If no Supabase products, fall back to mock data
             const allProducts = supabaseProducts.length > 0 
               ? supabaseProducts 
-              : getProductsBySellerId(sellerData.id);
+              : await fetchProductsBySellerId(sellerData.id);
               
             setProducts(allProducts);
           } else {
@@ -146,7 +145,19 @@ export const useShopData = (sellerId?: string) => {
       
       // Also update in Supabase if it's the user's own shop
       if (isOwnShop && user) {
-        await updateShopDescription(user.id, newDescription);
+        try {
+          // Update the shop description in Supabase
+          const { error } = await supabase
+            .from('profiles')
+            .update({ shop_description: newDescription })
+            .eq('id', user.id);
+            
+          if (error) {
+            console.error("Error updating shop description:", error);
+          }
+        } catch (err) {
+          console.error("Error in handleUpdateDescription:", err);
+        }
       }
     }
   };

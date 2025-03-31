@@ -57,7 +57,7 @@ const ShopProfile = ({ shopData, isOwnShop, onUpdateDescription }: ShopProfilePr
         <h2 className="text-3xl font-bold text-messaging-primary mb-2">{shopData.name}'s Shop</h2>
         <div className="mb-4 text-messaging-muted">
           <p>Seller since {new Date().toLocaleDateString()}</p>
-          {isOwnShop && <p>Contact: {shopData.email}</p>}
+          {/* Removed reference to non-existent email property */}
         </div>
         
         <h3 className="text-xl font-semibold mb-2">About the Shop</h3>
