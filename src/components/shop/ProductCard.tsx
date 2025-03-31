@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { Product } from "@/data/products";
 import { SellerData, getSellerById } from "@/data/sellers";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -12,8 +13,17 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   // Get the seller for this product
-  const seller = getSellerById(product.sellerId);
+  const [seller, setSeller] = useState<SellerData | null>(null);
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    const loadSeller = async () => {
+      const sellerData = await getSellerById(product.sellerId);
+      setSeller(sellerData);
+    };
+    
+    loadSeller();
+  }, [product.sellerId]);
   
   const handleMessageClick = () => {
     if (seller) {

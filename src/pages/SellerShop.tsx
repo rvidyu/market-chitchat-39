@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth";
 import { useNavigate, useParams } from "react-router-dom";
@@ -10,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import ShopProfile from "@/components/shop/ShopProfile";
 import ShopStats from "@/components/shop/ShopStats";
 import ProductsGrid from "@/components/shop/ProductsGrid";
-import { SellerData, MOCK_SELLERS } from "@/data/sellers";
+import { SellerData, MOCK_SELLERS, getSellerById, updateShopDescription } from "@/data/sellers";
 import { getProductsBySellerId, Product } from "@/data/products";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader, DialogTrigger } from "@/components/ui/dialog";
 import AddProductForm from "@/components/shop/AddProductForm";
@@ -75,83 +74,67 @@ const SellerShop = () => {
           return;
         }
         
-        // Use the logged-in seller's data
-        setShopData(MOCK_SELLERS[user.id] || {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: "seller",
-          shopDescription: "Welcome to my handmade and vintage shop! I specialize in creating unique, one-of-a-kind items made with love and care.",
-          stats: {
-            itemsSold: 0,
-            rating: 0,
-            products: 0,
-            reviews: 0
-          }
-        });
-        
-        // Try to get products from Supabase first
-        const supabaseProducts = await loadSupabaseProducts(user.id);
-        
-        // If no Supabase products, fall back to mock data
-        const allProducts = supabaseProducts.length > 0 
-          ? supabaseProducts 
-          : getProductsBySellerId(user.id);
-          
-        setProducts(allProducts);
-      } else {
-        // Viewing another seller's shop or public view
-        // Fetch the seller data based on the sellerId
-        const sellerData = MOCK_SELLERS[targetSellerId] || null;
+        // Get the seller data
+        const sellerData = await getSellerById(user.id);
         
         if (sellerData) {
           setShopData(sellerData);
           
           // Try to get products from Supabase first
-          const supabaseProducts = await loadSupabaseProducts(sellerData.id);
+          const supabaseProducts = await loadSupabaseProducts(user.id);
           
           // If no Supabase products, fall back to mock data
           const allProducts = supabaseProducts.length > 0 
             ? supabaseProducts 
-            : getProductsBySellerId(sellerData.id);
+            : getProductsBySellerId(user.id);
             
           setProducts(allProducts);
-        } else if (targetSellerId) {
-          console.error(`Seller with ID ${targetSellerId} not found`);
-          // Try to find any shop to display
-          const availableSellers = Object.values(MOCK_SELLERS);
-          if (availableSellers.length > 0) {
-            const defaultSeller = availableSellers[0];
-            setShopData(defaultSeller);
+        } else {
+          // Fallback for new sellers with no profile yet
+          const defaultSellerData: SellerData = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: "seller",
+            shopDescription: "Welcome to my handmade and vintage shop! I specialize in creating unique, one-of-a-kind items made with love and care.",
+            stats: {
+              itemsSold: 0,
+              rating: 0,
+              products: 0,
+              reviews: 0
+            }
+          };
+          setShopData(defaultSellerData);
+          setProducts([]);
+        }
+      } else {
+        // Viewing another seller's shop or public view
+        // Fetch the seller data based on the sellerId
+        if (targetSellerId) {
+          const sellerData = await getSellerById(targetSellerId);
+          
+          if (sellerData) {
+            setShopData(sellerData);
             
             // Try to get products from Supabase first
-            const supabaseProducts = await loadSupabaseProducts(defaultSeller.id);
+            const supabaseProducts = await loadSupabaseProducts(sellerData.id);
             
             // If no Supabase products, fall back to mock data
             const allProducts = supabaseProducts.length > 0 
               ? supabaseProducts 
-              : getProductsBySellerId(defaultSeller.id);
+              : getProductsBySellerId(sellerData.id);
               
             setProducts(allProducts);
           } else {
-            // No sellers available at all
+            console.error(`Seller with ID ${targetSellerId} not found`);
+            // If seller not found, redirect to home
             navigate("/");
             return;
           }
         } else {
-          // No sellerId and not logged in - show a default shop
-          const defaultSeller = MOCK_SELLERS["seller-1"];
-          setShopData(defaultSeller);
-          
-          // Try to get products from Supabase first
-          const supabaseProducts = await loadSupabaseProducts(defaultSeller.id);
-          
-          // If no Supabase products, fall back to mock data
-          const allProducts = supabaseProducts.length > 0 
-            ? supabaseProducts 
-            : getProductsBySellerId(defaultSeller.id);
-            
-          setProducts(allProducts);
+          // No sellerId and not logged in - show error
+          navigate("/");
+          return;
         }
       }
       
@@ -162,7 +145,7 @@ const SellerShop = () => {
   }, [sellerId, user, isOwnShop, navigate]);
 
   // Handler to update shop description
-  const handleUpdateDescription = (newDescription: string) => {
+  const handleUpdateDescription = async (newDescription: string) => {
     if (shopData) {
       // Create updated shop data
       const updatedShopData = {
@@ -172,11 +155,9 @@ const SellerShop = () => {
       
       setShopData(updatedShopData);
       
-      // In a real app, we would also update this in the backend
-      // For now, just update the mock data if it's the user's own shop
+      // Also update in Supabase if it's the user's own shop
       if (isOwnShop && user) {
-        MOCK_SELLERS[user.id] = updatedShopData;
-        console.log("Updated shop description for user:", user.id, newDescription);
+        await updateShopDescription(user.id, newDescription);
       }
     }
   };

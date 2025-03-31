@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { SellerData, fetchSellers } from "@/data/sellers";
 import ShopOverview from "./ShopOverview";
-import { Award, TrendingUp } from "lucide-react";
+import { Award, TrendingUp, Store } from "lucide-react";
 
 const FeaturedShops = () => {
   const [sellers, setSellers] = useState<SellerData[]>([]);
